@@ -1,0 +1,3 @@
+
+
+class CoreUserAPI extends CoreAPI

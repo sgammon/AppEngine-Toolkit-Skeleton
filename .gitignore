@@ -1,2 +1,6 @@
-.sass-cache*
+*.pyc
+*.pyo
+*.sass-cache*
 *.DS_Store
+.DS_Store
+lib/apptools/*.py

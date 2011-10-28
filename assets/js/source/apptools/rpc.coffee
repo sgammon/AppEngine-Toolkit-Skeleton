@@ -1,0 +1,3 @@
+
+
+class CoreRPCAPI extends CoreAPI

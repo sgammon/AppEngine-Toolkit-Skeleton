@@ -1,0 +1,3 @@
+
+
+class CoreChannelAPI extends CoreAPI

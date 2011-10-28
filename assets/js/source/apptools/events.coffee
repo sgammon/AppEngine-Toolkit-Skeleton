@@ -1,0 +1,3 @@
+
+
+class CoreEventsAPI extends CoreAPI
