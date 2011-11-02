@@ -8,7 +8,6 @@ class WebHandler(BaseHandler):
 	
 	''' Handler for desktop web requests. '''
 	
-	
 class MobileHandler(BaseHandler):
 	
 	''' Handler for mobile web requests. '''
