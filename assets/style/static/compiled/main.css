@@ -1,6 +1,5 @@
 body {
   font: 80% Verdana, sans-serif;
-  background: green;
 }
 
 h1 {
@@ -29,7 +28,6 @@ p {
   margin: 5em auto;
   padding: 0 0 0.5em 1em;
   border-radius: 15px;
-  border: 4px solid blue;
 }
 
 #debugtools ul.collapsed {
