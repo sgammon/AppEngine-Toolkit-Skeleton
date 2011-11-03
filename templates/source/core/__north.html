@@ -2,10 +2,16 @@
 
 <title>{% block title %}{% if page.title %}{{ page.title }}{% else %}{% if title %}{{ title }}{% endif %}{% endif %}{% endblock title %}</title>
 
-<!-- Stylesheets -->
-<style>@import url(http://fonts.googleapis.com/css?family=Satisfy);</style>
-<link rel="stylesheet" href="{{ asset.style('main', 'compiled') }}">
+{% block stylesheets %}
+	<!-- Stylesheets -->
+	<style>@import url(http://fonts.googleapis.com/css?family=Satisfy);</style>
+	<link rel="stylesheet" href="{{ asset.style('main', 'compiled') }}">
 
-{% if page.ie %}
-	<link rel="stylesheet" href="{{ asset.style('ie', 'compiled') }}">
-{% endif %}
+	{% if page.ie %}
+		<link rel="stylesheet" href="{{ asset.style('ie', 'h5bp') }}">
+	{% endif %}
+	
+	{% if page.mobile %}
+		<link rel="stylesheet" href="{{ asset.style('mobile', 'h5bp') }}">
+	{% endif %}
+{% endblock %}

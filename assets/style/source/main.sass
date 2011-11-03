@@ -4,7 +4,7 @@ body
 	font: 80% Verdana, sans-serif
 
 h1
-	font: 48pt 'Satisfy', cursive
+	font: 52pt 'Satisfy', cursive
 	width: 100%
 	text-align: center
 	padding-top: 25px
@@ -21,26 +21,24 @@ p
 	right: 0
 
 #welcome
-	background: white
-	width: 32em
-	margin: 5em auto
+	background: #999
+	width: 35em
+	margin: 0 auto
 	padding: 0 0 .5em 1em
 	border-radius: 15px
+	
+	#hello
+		text-align: center
+		background: #66CCFF
+		border-radius: 10px
+		width: 390px
+		margin-left: auto
+		margin-right: auto
 	
 #debugtools
 	
 	ul
 	
-		&.collapsed
-			display: none
-						
-		&.expanded
-			display: visible
-			background: #DDD
-			
-			li
-				list-style: none
-			
 		li.section
 		
 			padding-top: 3px
@@ -50,13 +48,11 @@ p
 			margin-bottom: 3px
 			list-style: none
 			background: #DDD
-			
-			&.closed
-				background: #BBB
-			
+						
 			a
 				
 				font-size: 90%
+				padding-left: 10px
 			
 				&.openclose
 					padding-left: 20px
@@ -66,4 +62,3 @@ p
 					
 					&.closed
 						background: #BBB url('/assets/img/static/icons/toggle-plus.png') no-repeat left bottom
-	

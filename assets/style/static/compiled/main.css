@@ -3,7 +3,7 @@ body {
 }
 
 h1 {
-  font: 48pt "Satisfy", cursive;
+  font: 52pt "Satisfy", cursive;
   width: 100%;
   text-align: center;
   padding-top: 25px;
@@ -23,23 +23,21 @@ p {
 }
 
 #welcome {
-  background: white;
-  width: 32em;
-  margin: 5em auto;
+  background: #999999;
+  width: 35em;
+  margin: 0 auto;
   padding: 0 0 0.5em 1em;
   border-radius: 15px;
 }
+#welcome #hello {
+  text-align: center;
+  background: #66ccff;
+  border-radius: 10px;
+  width: 390px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
-#debugtools ul.collapsed {
-  display: none;
-}
-#debugtools ul.expanded {
-  display: visible;
-  background: #dddddd;
-}
-#debugtools ul.expanded li {
-  list-style: none;
-}
 #debugtools ul li.section {
   padding-top: 3px;
   padding-bottom: 3px;
@@ -49,11 +47,9 @@ p {
   list-style: none;
   background: #dddddd;
 }
-#debugtools ul li.section.closed {
-  background: #bbbbbb;
-}
 #debugtools ul li.section a {
   font-size: 90%;
+  padding-left: 10px;
 }
 #debugtools ul li.section a.openclose {
   padding-left: 20px;
