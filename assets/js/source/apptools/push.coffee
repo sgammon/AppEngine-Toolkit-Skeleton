@@ -1,3 +1,3 @@
 
 
-class CoreChannelAPI extends CoreAPI
+class CorePushAPI extends CoreAPI

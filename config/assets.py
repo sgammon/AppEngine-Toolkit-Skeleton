@@ -45,7 +45,6 @@ config['apptools.project.assets'] = {
 
 			'assets': {
 				'base': {'min': True, 'version': 0.1}, # milk (mustasche for coffee), _underscore, _root
-				'rpc': {'min': True, 'version': 0.1}, # rpc framework, rpc caching
 			}
 	
 		},
