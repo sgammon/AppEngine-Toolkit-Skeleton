@@ -58,10 +58,6 @@ derived_file_type:
 #### ===== Custom Admin Pages
 admin_console:
   pages:
-  - name: Developer's Console
-    url: /_app/dev
-  - name: Management Console
-    url: /_app/manage
   - name: Map/Reduce
     url: /_ah/mapreduce/
   - name: Pipelines
@@ -171,30 +167,24 @@ handlers:
   static_files: static/\1
   upload: static/(.*\.crx)
 
-###### Static directory
+# Static directory
 - url: /static
-  static_dir: static
+static_dir: static
 
-###### Providence/Clarity Mappings
-- url: /_pc/manage/.*
-  script: momentum.platform.gateway.ManagementConsole
-  login: admin
-  auth_fail_action: redirect
+###### Dynamic
 
-###### API Requests to the Gateway
+# API Requests to the Gateway
 - url: /_api/rpc.*
   script: main.services
   login: optional
   auth_fail_action: unauthorized
 
-###### Google Verification
-- url: /googlee6f418a79df92b65.html
-  static_files: static/google_verify.html
-  upload: static/google_verify.html
-  
-###### Send to Tipfy
+# Pipelines
+- url: /_ah/pipelines(/.*)?
+  script: main.pipelines
+
+# Everything else is sent to AppTools
 - url: /.*
-  login: admin
   secure: optional
   script: main.main
   auth_fail_action: redirect
