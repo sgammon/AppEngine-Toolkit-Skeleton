@@ -1,17 +1,65 @@
 {% extends "core/__base.html" %}
 
+{% if page.ie %}
+<!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
+{% endif %}
+
 {% block body %}
-<div id="container">
-	{% block _wrapper %}
-	<header>
-		{% block header %}{% endblock %}
+
+<!-- Header -->
+<div id="header-container">
+	<header class="wrapper clearfix" role="banner">
+		{% block header %}
+		<h1 id="title">apptools</h1>
+		<nav role="navigation">
+			<ul>
+				<li><a href="#">nav ul li a</a></li>
+				<li><a href="#">nav ul li a</a></li>
+				<li><a href="#">nav ul li a</a></li>
+			</ul>
+		</nav>
+		{% endblock %}
 	</header>
-	<div id="main" role="main">
-		{% block main %}{% endblock %}
-	</div>
-	<footer>
-		{% block footer %}{% endblock %}
+</div>
+
+<!-- Main Content -->
+<div id="main-container">
+	<div id="main" class="wrapper clearfix" role="main">
+		{% block main %}
+		<article>
+			<header>
+				<h1>article header h1</h1>
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam sodales urna non odio egestas tempor. Nunc vel vehicula ante. Etiam bibendum iaculis libero, eget molestie nisl pharetra in. In semper consequat est, eu porta velit mollis nec.</p>
+			</header>
+			<section>
+				<h2>article section h2</h2>
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam sodales urna non odio egestas tempor. Nunc vel vehicula ante. Etiam bibendum iaculis libero, eget molestie nisl pharetra in. In semper consequat est, eu porta velit mollis nec. Curabitur posuere enim eget turpis feugiat tempor. Etiam ullamcorper lorem dapibus velit suscipit ultrices. Proin in est sed erat facilisis pharetra.</p>
+			</section>
+			<section>
+				<h2>article section h2</h2>
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam sodales urna non odio egestas tempor. Nunc vel vehicula ante. Etiam bibendum iaculis libero, eget molestie nisl pharetra in. In semper consequat est, eu porta velit mollis nec. Curabitur posuere enim eget turpis feugiat tempor. Etiam ullamcorper lorem dapibus velit suscipit ultrices. Proin in est sed erat facilisis pharetra.</p>
+			</section>
+			<footer>
+				<h3>article footer h3</h3>
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam sodales urna non odio egestas tempor. Nunc vel vehicula ante. Etiam bibendum iaculis libero, eget molestie nisl pharetra in. In semper consequat est, eu porta velit mollis nec. Curabitur posuere enim eget turpis feugiat tempor.</p>
+			</footer>
+		</article>
+
+		<aside>
+			<h3>aside</h3>
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam sodales urna non odio egestas tempor. Nunc vel vehicula ante. Etiam bibendum iaculis libero, eget molestie nisl pharetra in. In semper consequat est, eu porta velit mollis nec. Curabitur posuere enim eget turpis feugiat tempor. Etiam ullamcorper lorem dapibus velit suscipit ultrices.</p>
+		</aside>
+		{% endblock main %}
+	</div> <!-- #main -->
+</div> <!-- #main-container -->
+
+<!-- Footer -->
+<div id="footer-container">
+	<footer class="wrapper" role="banner">
+		{% block footer %}
+		<h3>footer</h3>
+		{% endblock %}
 	</footer>
-	{% endblock _wrapper %}
-</div> <!--! end of #container -->
+</div>
+
 {% endblock %}

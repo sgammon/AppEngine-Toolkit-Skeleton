@@ -1,13 +1,13 @@
 from __future__ import division
 from jinja2.runtime import LoopContext, TemplateReference, Macro, Markup, TemplateRuntimeError, missing, concat, escape, markup_join, unicode_join, to_string, identity, TemplateNotFound
 def run(environment):
-    name = '/source/core/__north.html'
+    name = '/source\\core\\__north.html'
 
     def root(context, environment=environment):
         l_asset = context.resolve('asset')
         l_page = context.resolve('page')
         if 0: yield None
-        template = environment.get_template('core/__meta.html', '/source/core/__north.html')
+        template = environment.get_template('core/__meta.html', '/source\\core\\__north.html')
         for event in template.root_render_func(template.new_context(context.parent, True, locals())):
             yield event
         yield u'\n\n<title>'

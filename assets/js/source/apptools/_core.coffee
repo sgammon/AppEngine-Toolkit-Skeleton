@@ -1,11 +1,23 @@
-
 class CoreAPI
 
+if @.Backbone?
+  @.__apptools_preinit.backbone = true
+  class AppToolsView extends Backbone.View
+  class AppToolsModel extends Backbone.Model
+  class AppToolsRouter extends Backbone.Router
 
-class CoreSysAPI extends CoreAPI
+  @.AppToolsView = AppToolsView
+  @.AppToolsModel = AppToolsModel
+  @.AppToolsRouter = AppToolsRouter
 
+  if exports?
+    exports['AppToolsView'] = AppToolsView
+    exports['AppToolsModel'] = AppToolsModel
+    exports['AppToolsRouter'] = AppToolsRouter
 
-class CoreAgentAPI extends CoreAPI	
-
-
-class CoreModelAPI extends CoreAPI
+if exports?
+  exports[key] = Milk[key] for key of Milk
+  exports['CoreAPI'] = CoreAPI
+else
+  @.Milk = Milk
+  @.CoreAPI = CoreAPI

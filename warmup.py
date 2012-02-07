@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Warmup request handler - imports and caches a bunch of data to prepare for requests. Always responds with a 200 OK.
 
@@ -11,7 +12,6 @@ import bootstrap
 bootstrap.AppBootstrap.prepareImports()
 
 ## Libraries
-import ndb
 import webob
 import jinja2
 import config
@@ -45,37 +45,37 @@ from google.appengine.ext import search
 
 ## Compiled templates
 try:
-	import templates
-	import templates.compiled
+    import templates
+    import templates.compiled
 except ImportError, e:
-	logging.warning('Failed to import compiled templates path... skipping.')
+    logging.warning('Failed to import compiled templates path... skipping.')
 
 else:
-	try:
-		from templates.compiled import *
-	except ImportError, e:
-		logging.warning('Failed to import compiled template module: '+str(e))
+    try:
+        from templates.compiled import *
+    except ImportError, e:
+        logging.warning('Failed to import compiled template module: ' + str(e))
 
 
 def respond200():
 
-	logging.debug('Warming up interpreter caches [CGI]...')
-	
-	print "HTTP/1.1 200 OK"
-	print "Content-Type: text/plain"
-	print ""
-	print "WARMUP_SUCCESS"
+    logging.debug('Warming up interpreter caches [CGI]...')
+
+    print "HTTP/1.1 200 OK"
+    print "Content-Type: text/plain"
+    print ""
+    print "WARMUP_SUCCESS"
 
 
 class WarmupHandler(webapp2.RequestHandler):
 
-	def get(self):
-	
-		logging.debug('Warming up interpreter caches [WSGI]...')
-		self.response.out.write("Warmup succeeded.")
-		
-		
+    def get(self):
+
+        logging.debug('Warming up interpreter caches [WSGI]...')
+        self.response.out.write("Warmup succeeded.")
+
+
 Warmup = webapp2.WSGIApplication([webapp2.Route('/_ah/warmup', WarmupHandler, name='warmup')])
 
 if __name__ == '__main__':
-	respond200()
+    respond200()
