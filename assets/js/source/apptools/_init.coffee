@@ -10,6 +10,7 @@ class AppTools
 				minor: 1
 				micro: 3
 				build: 02062011 # m/d/y
+				release: "ALPHA"
 
 		## Library Bridge
 		@lib = {}

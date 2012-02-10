@@ -1,14 +1,18 @@
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 <script>window.jQuery || document.write('<script src="{{ asset.script('jquery', 'core') }}"><\/script>')</script>
 
+<!-- Core Scripts -->
+<script src="{{ asset.script('modernizr', 'core') }}"></script>
+<script src="{{ asset.script('underscore', 'core') }}"></script>
+<script src="{{ asset.script('backbone', 'core') }}"></script>
+<script src="{{ asset.script('lawnchair', 'core') }}"></script>
+
 <!-- Base Scripts -->
 <script src="{{ asset.script('base', 'apptools') }}"></script>
-<script src="{{ asset.script('modernizr', 'core') }}"></script>
-<script src="{{ asset.script('storage', 'apptools') }}"></script>
-<script src="{{ asset.script('rpc', 'apptools') }}"></script>
 
-<!-- Project Scripts -->
-<script src="{{ asset.script('base', 'apptools') }}"></script>
+{# <!-- Project Scripts --> #}
+
+{# <!-- JS Templates --> #}
 
 {% if page.analytics %}
 <script>

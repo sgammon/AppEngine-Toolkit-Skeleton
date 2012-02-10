@@ -12,11 +12,11 @@
 
   Find = function(name, stack, value) {
     var ctx, i, part, parts, _i, _len, _ref, _ref2;
-    if (value === null) value = null;
+    if (value == null) value = null;
     if (name === '.') return stack[stack.length - 1];
     _ref = name.split(/\./), name = _ref[0], parts = 2 <= _ref.length ? __slice.call(_ref, 1) : [];
     for (i = _ref2 = stack.length - 1; _ref2 <= -1 ? i < -1 : i > -1; _ref2 <= -1 ? i++ : i--) {
-      if (stack[i] === null) continue;
+      if (stack[i] == null) continue;
       if (!(typeof stack[i] === 'object' && name in (ctx = stack[i]))) continue;
       value = ctx[name];
       break;
@@ -53,15 +53,14 @@
 
   Parse = function(template, delimiters, section) {
     var BuildRegex, buffer, buildInterpolationTag, buildInvertedSectionTag, buildPartialTag, buildSectionTag, cache, content, contentEnd, d, error, escape, isStandalone, match, name, parseError, pos, sectionInfo, tag, tagPattern, tmpl, type, whitespace, _name, _ref, _ref2, _ref3;
-    if (delimiters === null) delimiters = ['{{', '}}'];
-    if (section === null) section = null;
+    if (delimiters == null) delimiters = ['{{', '}}'];
+    if (section == null) section = null;
     cache = (TemplateCache[_name = delimiters.join(' ')] || (TemplateCache[_name] = {}));
     if (template in cache) return cache[template];
     buffer = [];
     BuildRegex = function() {
       var tagClose, tagOpen;
-      tagOpen = delimiters[0];
-      tagClose = delimiters[1];
+      tagOpen = delimiters[0], tagClose = delimiters[1];
       return RegExp("([\\s\\S]*?)([" + ' ' + "\\t]*)(?:" + tagOpen + "\\s*(?:(!)\\s*([\\s\\S]+?)|(=)\\s*([\\s\\S]+?)\\s*=|({)\\s*(\\w[\\S]*?)\\s*}|([^0-9a-zA-Z._!={]?)\\s*([\\w.][\\S]*?))\\s*" + tagClose + ")", "gm");
     };
     tagPattern = BuildRegex();
@@ -1463,7 +1462,8 @@
           major: 0,
           minor: 1,
           micro: 3,
-          build: 02062011
+          build: 02062011,
+          release: "ALPHA"
         }
       };
       this.lib = {};
