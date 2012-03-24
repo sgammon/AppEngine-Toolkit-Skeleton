@@ -1,5 +1,5 @@
 (function() {
-  var AppTools, AppToolsModel, AppToolsRouter, AppToolsView, CoreAPI, CoreAgentAPI, CoreDevAPI, CoreDispatchAPI, CoreEventsAPI, CorePushAPI, CoreRPCAPI, CoreStorageAPI, CoreUserAPI, Expand, Find, Milk, Parse, RPCAPI, RPCRequest, TemplateCache, key,
+  var AppTools, AppToolsCollection, AppToolsModel, AppToolsRouter, AppToolsView, CoreAPI, CoreAgentAPI, CoreDevAPI, CoreDispatchAPI, CoreEventsAPI, CoreModelAPI, CorePushAPI, CoreRPCAPI, CoreStorageAPI, CoreUserAPI, Expand, Find, Milk, Parse, RPCAPI, RPCRequest, TemplateCache, key,
     __slice = Array.prototype.slice,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
@@ -260,6 +260,11 @@
     }
   };
 
+  this.__apptools_preinit = {
+    lib: {},
+    abstract_base_classes: []
+  };
+
   CoreAPI = (function() {
 
     function CoreAPI() {}
@@ -269,7 +274,10 @@
   })();
 
   if (this.Backbone != null) {
-    this.__apptools_preinit.backbone = true;
+    this.__apptools_preinit.lib.backbone = {
+      enabled: true,
+      reference: this.Backbone
+    };
     AppToolsView = (function(_super) {
 
       __extends(AppToolsView, _super);
@@ -303,14 +311,50 @@
       return AppToolsRouter;
 
     })(Backbone.Router);
-    this.AppToolsView = AppToolsView;
-    this.AppToolsModel = AppToolsModel;
-    this.AppToolsRouter = AppToolsRouter;
-    if (typeof exports !== "undefined" && exports !== null) {
-      exports['AppToolsView'] = AppToolsView;
-      exports['AppToolsModel'] = AppToolsModel;
-      exports['AppToolsRouter'] = AppToolsRouter;
-    }
+    AppToolsCollection = (function(_super) {
+
+      __extends(AppToolsCollection, _super);
+
+      function AppToolsCollection() {
+        AppToolsCollection.__super__.constructor.apply(this, arguments);
+      }
+
+      return AppToolsCollection;
+
+    })(Backbone.Collection);
+  } else {
+    this.__apptools_preinit.lib.backbone = {
+      enabled: false,
+      reference: null
+    };
+    AppToolsView = (function() {
+
+      function AppToolsView() {}
+
+      return AppToolsView;
+
+    })();
+    AppToolsModel = (function() {
+
+      function AppToolsModel() {}
+
+      return AppToolsModel;
+
+    })();
+    AppToolsRouter = (function() {
+
+      function AppToolsRouter() {}
+
+      return AppToolsRouter;
+
+    })();
+    AppToolsCollection = (function() {
+
+      function AppToolsCollection() {}
+
+      return AppToolsCollection;
+
+    })();
   }
 
   if (typeof exports !== "undefined" && exports !== null) {
@@ -318,9 +362,32 @@
       exports[key] = Milk[key];
     }
     exports['CoreAPI'] = CoreAPI;
+    exports['AppToolsView'] = AppToolsView;
+    exports['AppToolsModel'] = AppToolsModel;
+    exports['AppToolsRouter'] = AppToolsRouter;
+    exports['AppToolsCollection'] = AppToolsCollection;
   } else {
     this.Milk = Milk;
     this.CoreAPI = CoreAPI;
+    this.__apptools_preinit.lib.milk = {
+      enabled: true,
+      reference: this.Milk
+    };
+    this.__apptools_preinit.abstract_base_classes.push(CoreAPI);
+    this.AppToolsView = AppToolsView;
+    this.AppToolsModel = AppToolsModel;
+    this.AppToolsRouter = AppToolsRouter;
+    this.AppToolsCollection = AppToolsCollection;
+    this.__AppToolsBaseClasses = {
+      AppToolsView: AppToolsView,
+      AppToolsModel: AppToolsModel,
+      AppToolsRouter: AppToolsRouter,
+      AppToolsCollection: AppToolsCollection
+    };
+    this.__apptools_preinit.abstract_base_classes.push(AppToolsView);
+    this.__apptools_preinit.abstract_base_classes.push(AppToolsModel);
+    this.__apptools_preinit.abstract_base_classes.push(AppToolsRouter);
+    this.__apptools_preinit.abstract_base_classes.push(AppToolsCollection);
   }
 
   CoreDevAPI = (function(_super) {
@@ -382,6 +449,16 @@
     };
 
     return CoreDevAPI;
+
+  })(CoreAPI);
+
+  CoreModelAPI = (function(_super) {
+
+    __extends(CoreModelAPI, _super);
+
+    function CoreModelAPI(apptools) {}
+
+    return CoreModelAPI;
 
   })(CoreAPI);
 
@@ -447,7 +524,7 @@
         apptools.dev.verbose('Events', 'Registered event.', name);
         return true;
       };
-      this.hook = function(event, callback, once) {
+      this.on = this.when = this.hook = function(event, callback, once) {
         if (once == null) once = false;
         if (__indexOf.call(_this.registry, event) < 0) _this.register(event);
         _this.callchain[event].hooks.push({
@@ -806,30 +883,28 @@
       var api, rpcMethod,
         _this = this;
       api = this.name;
-      rpcMethod = function(params, callbacks, async, opts) {
+      rpcMethod = function(params, callbacks, async, push, opts) {
         if (params == null) params = {};
         if (callbacks == null) callbacks = null;
         if (async == null) async = false;
+        if (push == null) push = false;
         if (opts == null) opts = {};
-        return (function(params, callbacks, async, opts) {
+        return (function(params, callbacks, async, push, opts) {
           var request;
-          if (params == null) params = {};
-          if (callbacks == null) callbacks = null;
-          if (async == null) async = false;
-          if (opts == null) opts = {};
           request = $.apptools.api.rpc.createRPCRequest({
             method: method,
             api: api,
             params: params || {},
             opts: opts || {},
-            async: async || false
+            async: async || false,
+            push: push || false
           });
           if (callbacks !== null) {
             return request.fulfill(callbacks);
           } else {
             return request;
           }
-        })(params, callbacks, async, opts);
+        })(params, callbacks, async, push, opts);
       };
       $.apptools.api.registerAPIMethod(api, method, base_uri, config);
       return rpcMethod;
@@ -862,6 +937,7 @@
         processData: false,
         ifModified: false,
         dataType: 'json',
+        push: false,
         contentType: 'application/json; charset=utf-8'
       };
       if (id != null) this.envelope.id = id;
@@ -869,19 +945,19 @@
       if (agent != null) this.envelope.agent = agent;
     }
 
-    RPCRequest.prototype.fulfill = function() {
-      var callbacks, config, defaultFailureCallback, defaultSuccessCallback,
+    RPCRequest.prototype.fulfill = function(callbacks, config) {
+      var defaultFailureCallback, defaultSuccessCallback,
         _this = this;
-      callbacks = arguments[0], config = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      if (!(callbacks != null ? callbacks.success : void 0)) {
-        defaultSuccessCallback = function(context) {
-          return $.apptools.dev.log('RPC', 'RPC succeeded but had no success callback.', _this);
+      if (callbacks == null) callbacks = {};
+      if (!((callbacks != null ? callbacks.success : void 0) != null)) {
+        defaultSuccessCallback = function(context, type, data) {
+          return $.apptools.dev.log('RPC', 'RPC succeeded but had no success callback.', _this, context, type, data);
         };
         callbacks.success = defaultSuccessCallback;
       }
-      if (!(callbacks != null ? callbacks.failure : void 0)) {
+      if (!((callbacks != null ? callbacks.failure : void 0) != null)) {
         defaultFailureCallback = function(context) {
-          return $.apptools.dev.error('RPC', 'RPC failed but had no failure callback.', _this);
+          return $.apptools.dev.error('RPC', 'RPC failed but had no failure callback.', _this, context);
         };
         callbacks.failure = defaultFailureCallback;
       }
@@ -896,6 +972,7 @@
 
     RPCRequest.prototype.setPush = function(push) {
       if (push === true) {
+        this.ajax.push = true;
         this.envelope.opts['alt'] = 'socket';
         this.envelope.opts['token'] = $.apptools.push.state.config.token;
       }
@@ -1004,8 +1081,8 @@
         },
         config: {
           headers: {
-            "X-ServiceClient": ["AppToolsJS//", [apptools.sys.version.major.toString(), apptools.sys.version.minor.toString(), apptools.sys.version.micro.toString(), apptools.sys.version.build.toString()].join('.'), "-", apptools.sys.version.release.toString()].join(''),
-            "X-ServiceTransport": "AppTools-JSONRPC"
+            "X-ServiceClient": ["AppToolsJS/", [apptools.sys.version.major.toString(), apptools.sys.version.minor.toString(), apptools.sys.version.micro.toString(), apptools.sys.version.build.toString()].join('.'), "-", apptools.sys.version.release.toString()].join(''),
+            "X-ServiceTransport": "AppTools/JSONRPC"
           }
         }
       };
@@ -1073,13 +1150,13 @@
           } else {
             request.setPush(this.alt_push_response);
           }
-          $.apptools.dev.log('RPC', 'New Request', request, config);
+          $.apptools.dev.verbose('RPC', 'New Request', request, config);
           request.setAction(this._assembleRPCURL(request.method, request.api, this.action_prefix, this.base_rpc_uri));
           return request;
         },
         fulfillRPCRequest: function(config, request, callbacks) {
           var context;
-          $.apptools.dev.log('RPC', 'Fulfill', config, request, callbacks);
+          $.apptools.dev.verbose('RPC', 'Fulfill', config, request, callbacks);
           this.lastRequest = request;
           this.history[request.envelope.id] = {
             request: request,
@@ -1119,8 +1196,8 @@
               data: JSON.stringify(request.payload()),
               async: request.ajax.async,
               global: request.ajax.global,
-              type: request.ajax.http_method,
-              accepts: request.ajax.accepts,
+              type: request.ajax.http_method || 'POST',
+              accepts: request.ajax.accepts || 'application/json',
               crossDomain: request.ajax.crossDomain,
               dataType: request.ajax.dataType,
               processData: false,
@@ -1197,29 +1274,31 @@
                     }
                   }
                   return $.apptools.push.internal.expect(request.envelope.id, request, xhr);
-                } else if (data.status === 'failure') {
+                } else if (data.status === 'fail') {
                   if (callbacks != null) {
                     if (typeof callbacks.status === "function") {
                       callbacks.status('error');
                     }
                   }
                   $.apptools.dev.error('RPC', 'Error: ', {
-                    error: error,
+                    error: data,
                     status: status,
                     xhr: xhr
                   });
-                  $.apptools.api.rpc.lastFailure = error;
+                  $.apptools.api.rpc.lastFailure = data;
                   $.apptools.api.rpc.history[request.envelope.id].xhr = xhr;
                   $.apptools.api.rpc.history[request.envelope.id].status = status;
-                  $.apptools.api.rpc.history[request.envelope.id].failure = error;
+                  $.apptools.api.rpc.history[request.envelope.id].failure = data;
                   context = {
                     xhr: xhr,
                     status: status,
-                    error: error
+                    error: data
                   };
                   $.apptools.events.trigger('RPC_ERROR', context);
                   $.apptools.events.trigger('RPC_COMPLETE', context);
-                  return callbacks != null ? typeof callbacks.failure === "function" ? callbacks.failure(error) : void 0 : void 0;
+                  return callbacks != null ? typeof callbacks.failure === "function" ? callbacks.failure(data) : void 0 : void 0;
+                } else {
+                  return callbacks != null ? typeof callbacks.success === "function" ? callbacks.success(data.response.content, data.response.type, data) : void 0 : void 0;
                 }
               },
               statusCode: {
@@ -1464,7 +1543,8 @@
           micro: 3,
           build: 02062011,
           release: "ALPHA"
-        }
+        },
+        platform: {}
       };
       this.lib = {};
       if ((window != null ? window.Modernizr : void 0) != null) {
@@ -1485,14 +1565,19 @@
       if ((window != null ? window.jQuery : void 0) != null) {
         this.lib.jquery = window.jQuery;
       }
+      if ((window != null ? window.Milk : void 0) != null) {
+        this.lib.milk = window.Milk;
+      }
+      if ((window != null ? window.Mustache : void 0) != null) {
+        this.lib.mustache = window.Mustache;
+      }
       this.dev = new CoreDevAPI(this);
+      this.model = new CoreModelAPI(this);
       this.events = new CoreEventsAPI(this);
       this.agent = new CoreAgentAPI(this);
       this.agent.discover();
       this.dispatch = new CoreDispatchAPI(this);
-      this.rpc = new CoreRPCAPI(this);
-      this.model = new CoreModelAPI(this);
-      this.api = new CoreAPIBridge(this);
+      this.api = new CoreRPCAPI(this);
       this.user = new CoreUserAPI(this);
       this.push = new CorePushAPI(this);
       return this;
@@ -1504,7 +1589,7 @@
 
   window.AppTools = AppTools;
 
-  window.apptools = new AppTools();
+  window.apptools = new AppTools(window);
 
   if (typeof $ !== "undefined" && $ !== null) {
     $.extend({
