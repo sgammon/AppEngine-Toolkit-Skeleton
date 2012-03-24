@@ -11,6 +11,7 @@ class AppTools
 				micro: 3
 				build: 02062011 # m/d/y
 				release: "ALPHA"
+			platform: {}
 
 		## Library Bridge
 		@lib = {}
@@ -33,8 +34,17 @@ class AppTools
 		if window?.jQuery?
 			@lib.jquery = window.jQuery
 
+		if window?.Milk?
+			@lib.milk = window.Milk
+
+		if window?.Mustache?
+			@lib.mustache = window.Mustache
+
 		## Dev API (for logging/debugging)
 		@dev = new CoreDevAPI(@)
+
+		## Model API
+		@model = new CoreModelAPI(@)
 
 		## Events API
 		@events = new CoreEventsAPI(@)
@@ -46,14 +56,8 @@ class AppTools
 		## Dispatch API
 		@dispatch = new CoreDispatchAPI(@)
 
-		## JSONRPC (low-level) API
-		@rpc = new CoreRPCAPI(@)
-
-		## Model API
-		@model = new CoreModelAPI(@)
-
-		## AppTools Service Layer (hi-level) API
-		@api = new CoreAPIBridge(@)
+		## JSONRPC (service layer) API
+		@api = new CoreRPCAPI(@)
 
 		## Users API
 		@user = new CoreUserAPI(@)
@@ -64,6 +68,6 @@ class AppTools
 		return @
 
 window.AppTools = AppTools
-window.apptools = new AppTools()
+window.apptools = new AppTools(window)
 if $?
 	$.extend(apptools: window.apptools)

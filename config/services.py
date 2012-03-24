@@ -17,6 +17,7 @@ config['apptools.project.services'] = {
     'config': {
 
         'url_prefix': '/_api/rpc',  # Prefix for all service invocation URLs
+        'secret_key': 'vjvbhvb(*B(#&@G#cvbn9dnc9*BN(!*B76cv23',  # Secret key for generating HMAC signings
 
     },
 
@@ -26,8 +27,21 @@ config['apptools.project.services'] = {
         ## Debug, development, uptime, etc methods for infrastructure/testing/monitoring use
         'system': {
             'enabled': True,
-            'service': 'apptools.services.SystemAPIService',
-            'methods': ['echo', 'hello'],
+            'service': 'apptools.services.builtin.SystemService',
+            'methods': ['echo', 'hello', 'whoareyou', 'manifest'],
+
+            'config': {
+                'caching': 'none',
+                'security': 'none',
+                'recording': 'none'
+            }
+        },
+
+        ## Assets API - allows asset sync, AJAX access to asset URLs, and dynamic manifest access
+        'assets': {
+            'enabled': True,
+            'service': 'apptools.services.builtin.AssetsService',
+            'methods': ['image_url', 'script_url', 'style_url', 'blob_url', 'manifest', 'generate_upload_url'],
 
             'config': {
                 'caching': 'none',
@@ -60,7 +74,7 @@ config['apptools.services'] = {
 
             'enabled': True,
             'debug': True,
-            'path': 'apptools.middleware.AuthenticationMiddleware',
+            'path': 'apptools.services.middleware.AuthenticationMiddleware',
             'args': {
 
             }
@@ -73,7 +87,7 @@ config['apptools.services'] = {
 
             'enabled': True,
             'debug': True,
-            'path': 'apptools.middleware.MonitoringMiddleware',
+            'path': 'apptools.services.middleware.MonitoringMiddleware',
             'args': {
 
             }
@@ -86,7 +100,7 @@ config['apptools.services'] = {
 
             'enabled': True,
             'debug': True,
-            'path': 'apptools.middleware.AuthorizationMiddleware',
+            'path': 'apptools.services.middleware.AuthorizationMiddleware',
             'args': {
 
             }
@@ -99,7 +113,7 @@ config['apptools.services'] = {
 
             'enabled': True,
             'debug': True,
-            'path': 'apptools.middleware.CachingMiddleware',
+            'path': 'apptools.services.middleware.CachingMiddleware',
             'args': {
 
             }

@@ -43,7 +43,7 @@ class CoreEventsAPI extends CoreAPI
             apptools.dev.verbose 'Events', 'Registered event.', name
             return true
 
-        @hook = (event, callback, once=false) =>
+        @on = @when = @hook = (event, callback, once=false) =>
 
             if event not in @registry
                 @register(event)

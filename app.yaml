@@ -23,13 +23,13 @@ skip_files:
 
 #### ===== Libraries
 libraries:
-- name: webapp2
-  version: "latest"
 - name: jinja2
   version: "latest"
 - name: markupsafe
   version: "latest"
 - name: webob
+  version: "latest"
+- name: setuptools
   version: "latest"
 
 
@@ -132,8 +132,8 @@ handlers:
   auth_fail_action: unauthorized
 
 # Backend Start Hook
-- url: /_ah/start
-  script: main.warmup
+- url: /_ah/start.*
+  script: main.backend
   login: admin
   auth_fail_action: unauthorized
 
@@ -214,7 +214,7 @@ handlers:
 
 ###### Everything else goes to AppTools
 - url: /.*
-  login: admin
+  login: optional
   secure: optional
   script: main.main
   auth_fail_action: redirect

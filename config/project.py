@@ -16,7 +16,7 @@ config['apptools.project'] = {
         'major': 1,
         'minor': 0,
         'micro': 0,
-        'build': 20111009,
+        'build': 20120321,
         'release': 'BETA'
     }
 
@@ -36,15 +36,25 @@ config['apptools.project.output'] = {
     'optimize': True,     # whether to use the async script loader or not
     'standalone': False,  # whether to render only the current template, or the whole context (ignores "extends")
 
+    'analytics': {  # Analytics Settings
+        'enable': True,              # whether to insert analytics code
+        'account_id': 'UA-XXXXX-X'   # your google anlytics site ID
+    },
+
     'appcache': {  # HTML5 appcaching
         'enable': False,                       # whether to enable
         'manifest': 'scaffolding-v1.appcache'  # manifest to link to
     },
 
-    'assets': {
+    'assets': {  # Asset API
         'minified': False,        # whether to switch to minified assets or not
         'serving_mode': 'local',  # 'local' or 'cdn' (CDN prefixes all assets with an absolute URL)
         'cdn_prefix': []          # CDN prefix/prefixes - a string is used globally, a list of hostnames is selected from randomly for each asset
+    },
+
+    'headers': {  # Default Headers (only supported headers are shown)
+        'Cache-Control': 'no-cache',  # default to not caching dynamic content
+        'X-UA-Compatible': 'IE=edge,chrome=1'  # http://code.google.com/chrome/chromeframe/
     }
 
 }

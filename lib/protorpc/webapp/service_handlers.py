@@ -102,7 +102,6 @@ import weakref
 
 import webapp2
 
-from google.appengine.ext.webapp import util as webapp_util
 from protorpc import messages
 from protorpc import protobuf
 from protorpc import protojson
@@ -821,4 +820,4 @@ def run_services(services,
   """
   mappings = service_mapping(services, registry_path=registry_path)
   application = webapp.WSGIApplication(mappings)
-  webapp_util.run_wsgi_app(application)
+  application.run()

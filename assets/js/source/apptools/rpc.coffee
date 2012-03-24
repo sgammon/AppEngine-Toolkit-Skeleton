@@ -12,8 +12,8 @@ class RPCAPI
 
     _buildRPCMethod: (method, base_uri, config) ->
         api = @name
-        rpcMethod = (params={}, callbacks=null, async=false, opts={}) =>
-            do (params={}, callbacks=null, async=false, opts={}) =>
+        rpcMethod = (params={}, callbacks=null, async=false, push=false, opts={}) =>
+            do (params, callbacks, async, push, opts) =>
                 request = $.apptools.api.rpc.createRPCRequest({
 
                     method: method
@@ -21,6 +21,7 @@ class RPCAPI
                     params: params || {}
                     opts: opts || {}
                     async: async || false
+                    push: push || false
 
                 })
 
@@ -59,6 +60,7 @@ class RPCRequest
             processData: false
             ifModified: false
             dataType: 'json'
+            push: false
             contentType: 'application/json; charset=utf-8'
 
         if id?
@@ -68,16 +70,16 @@ class RPCRequest
         if agent?
             @envelope.agent = agent
 
-    fulfill: (callbacks, config...) ->
+    fulfill: (callbacks={}, config) ->
 
-        if not callbacks?.success
-            defaultSuccessCallback = (context) =>
-                $.apptools.dev.log('RPC', 'RPC succeeded but had no success callback.', @)
+        if not callbacks?.success?
+            defaultSuccessCallback = (context, type, data) =>
+                $.apptools.dev.log('RPC', 'RPC succeeded but had no success callback.', @, context, type, data)
             callbacks.success = defaultSuccessCallback
 
-        if not callbacks?.failure
+        if not callbacks?.failure?
             defaultFailureCallback = (context) =>
-                $.apptools.dev.error('RPC', 'RPC failed but had no failure callback.', @)
+                $.apptools.dev.error('RPC', 'RPC failed but had no failure callback.', @, context)
             callbacks.failure = defaultFailureCallback
 
         return $.apptools.api.rpc.fulfillRPCRequest(config, @, callbacks)
@@ -88,6 +90,7 @@ class RPCRequest
 
     setPush: (push) ->
         if push == true
+            @ajax.push = true
             @envelope.opts['alt'] = 'socket'
             @envelope.opts['token'] = $.apptools.push.state.config.token
 
@@ -170,14 +173,14 @@ class CoreRPCAPI extends CoreAPI
 
             config:
                 headers:
-                    "X-ServiceClient": ["AppToolsJS//", [
+                    "X-ServiceClient": ["AppToolsJS/", [
                                                 apptools.sys.version.major.toString(),
                                                 apptools.sys.version.minor.toString(),
                                                 apptools.sys.version.micro.toString(),
                                                 apptools.sys.version.build.toString()].join('.'),
                                         "-", apptools.sys.version.release.toString()].join('')
 
-                    "X-ServiceTransport": "AppTools-JSONRPC"
+                    "X-ServiceTransport": "AppTools/JSONRPC"
 
         $.ajaxSetup(
 
@@ -255,14 +258,14 @@ class CoreRPCAPI extends CoreAPI
                 else
                     request.setPush(@alt_push_response)
 
-                $.apptools.dev.log('RPC', 'New Request', request, config)
+                $.apptools.dev.verbose('RPC', 'New Request', request, config)
                 request.setAction(@_assembleRPCURL(request.method, request.api, @action_prefix, @base_rpc_uri))
 
                 return request
 
             fulfillRPCRequest: (config, request, callbacks) ->
 
-                $.apptools.dev.log('RPC', 'Fulfill', config, request, callbacks)
+                $.apptools.dev.verbose('RPC', 'Fulfill', config, request, callbacks)
 
                 @lastRequest = request
 
@@ -300,8 +303,8 @@ class CoreRPCAPI extends CoreAPI
                         data: JSON.stringify request.payload()
                         async: request.ajax.async
                         global: request.ajax.global
-                        type: request.ajax.http_method
-                        accepts: request.ajax.accepts
+                        type: request.ajax.http_method or 'POST'
+                        accepts: request.ajax.accepts or 'application/json'
                         crossDomain: request.ajax.crossDomain
                         dataType: request.ajax.dataType
                         processData: false
@@ -361,22 +364,25 @@ class CoreRPCAPI extends CoreAPI
                                 callbacks?.wait?(data, status, xhr)
                                 $.apptools.push.internal.expect(request.envelope.id, request, xhr)
 
-                            else if data.status == 'failure'
+                            else if data.status == 'fail'
                                 callbacks?.status?('error')
-                                $.apptools.dev.error('RPC', 'Error: ', {error: error, status: status, xhr: xhr})
-                                $.apptools.api.rpc.lastFailure = error
+                                $.apptools.dev.error('RPC', 'Error: ', {error: data, status: status, xhr: xhr})
+                                $.apptools.api.rpc.lastFailure = data
                                 $.apptools.api.rpc.history[request.envelope.id].xhr = xhr
                                 $.apptools.api.rpc.history[request.envelope.id].status = status
-                                $.apptools.api.rpc.history[request.envelope.id].failure = error
+                                $.apptools.api.rpc.history[request.envelope.id].failure = data
 
                                 context =
                                     xhr: xhr
                                     status: status
-                                    error: error
+                                    error: data
 
                                 $.apptools.events.trigger('RPC_ERROR', context)
                                 $.apptools.events.trigger('RPC_COMPLETE', context)
-                                callbacks?.failure?(error)
+                                callbacks?.failure?(data)
+
+                            else
+                                callbacks?.success?(data.response.content, data.response.type, data)
 
 
                         statusCode:

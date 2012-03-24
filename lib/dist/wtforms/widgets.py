@@ -21,11 +21,12 @@ def html_params(**kwargs):
     u'class="text" id="f" name="text1"'
     """
     params = []
-    for k,v in sorted(kwargs.iteritems()):
+    for k, v in sorted(kwargs.iteritems()):
         if k in ('class_', 'class__', 'for_'):
             k = k[:-1]
         params.append(u'%s="%s"' % (unicode(k), escape(unicode(v), quote=True)))
     return u' '.join(params)
+
 
 class HTMLString(unicode):
     def __html__(self):

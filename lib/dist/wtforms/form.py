@@ -3,6 +3,7 @@ __all__ = (
     'Form',
 )
 
+
 class BaseForm(object):
     """
     Base Form Class.  Provides core behaviour like field construction,
@@ -285,4 +286,3 @@ class WebobInputWrapper(object):
 
     def getlist(self, name):
         return self._wrapped.getall(name)
-

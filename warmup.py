@@ -9,7 +9,7 @@ import os
 import sys
 import bootstrap
 
-bootstrap.AppBootstrap.prepareImports()
+bootstrap.AppBootstrapper.prepareImports()
 
 ## Libraries
 import webob
@@ -75,7 +75,14 @@ class WarmupHandler(webapp2.RequestHandler):
         self.response.out.write("Warmup succeeded.")
 
 
-Warmup = webapp2.WSGIApplication([webapp2.Route('/_ah/warmup', WarmupHandler, name='warmup')])
+class StartHandler(webapp2.RequestHandler):
+
+    def get(self):
+        logging.debug('Warming up interpreter caches for backend [WSGI]...')
+        self.response.out.write("Backend startup succeeded.")
+
+
+Warmup = webapp2.WSGIApplication([webapp2.Route('/_ah/warmup', WarmupHandler, name='warmup'), webapp2.Route('/_ah/start', StartHandler, name='start')])
 
 if __name__ == '__main__':
     respond200()

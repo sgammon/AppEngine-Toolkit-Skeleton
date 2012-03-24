@@ -52,7 +52,7 @@ class Field(object):
         Construct a new field.
 
         :param label:
-            The label of the field. 
+            The label of the field.
         :param validators:
             A sequence of validators to call when `validate` is called.
         :param filters:
@@ -88,7 +88,7 @@ class Field(object):
         self.id = id or self.name
         if label is None:
             label = _name.replace('_', ' ').title()
-        self.label = Label(self.id, label) 
+        self.label = Label(self.id, label)
         if validators is None:
             validators = []
         self.validators = validators
@@ -759,7 +759,7 @@ class FieldList(Field):
         accept no more than this many entries as input, even if more exist in
         formdata.
     """
-    widget=widgets.ListWidget()
+    widget = widgets.ListWidget()
 
     def __init__(self, unbound_field, label=None, validators=None, min_entries=0,
                  max_entries=None, default=tuple(), **kwargs):
@@ -849,7 +849,7 @@ class FieldList(Field):
             'You cannot have more than max_entries entries in this FieldList'
         new_index = self.last_index = index or (self.last_index + 1)
         name = '%s-%d' % (self.short_name, new_index)
-        id   = '%s-%d' % (self.id, new_index)
+        id = '%s-%d' % (self.id, new_index)
         field = self.unbound_field.bind(form=None, name=name, prefix=self._prefix, id=id)
         field.process(formdata, data)
         self.entries.append(field)
