@@ -1,18 +1,21 @@
 # AppTools RPC - CoreRPCAPI, RPCAPI, RPCRequest
 
 # Represents a server-side API, so requests can be sent from JavaScript
-class RPCAPI
+class RPCAPI extends CoreObject
 
+    # RPCAPI Constructor
     constructor: (@name, @base_uri, @methods, @config) ->
 
+        ## Build little shims for each method...
         if @methods.length > 0
             for method in @methods
                 @[method] = @_buildRPCMethod(method, base_uri, config)
 
 
+    # Build a remote method shim
     _buildRPCMethod: (method, base_uri, config) ->
         api = @name
-        rpcMethod = (params={}, callbacks=null, async=false, push=false, opts={}) =>
+        rpcMethod = (params={}, callbacks=null, async=false, push=false, opts={}, config={}) =>
             do (params, callbacks, async, push, opts) =>
                 request = $.apptools.api.rpc.createRPCRequest({
 
@@ -26,30 +29,35 @@ class RPCAPI
                 })
 
                 if callbacks isnt null
-                    return request.fulfill(callbacks)
+                    return request.fulfill(callbacks, config)
                 else
                     return request
 
+        # Register API method capability
         $.apptools.api.registerAPIMethod(api, method, base_uri, config)
         return rpcMethod
 
 
 # Represents a single RPC request, complete with config, params, callbacks, etc
-class RPCRequest
+class RPCRequest extends CoreObject
 
+    # RPCRequest Constructor
     constructor: (id, opts, agent) ->
 
+        ## Expose params
         @params = {}
         @action = null
         @method = null
         @api = null
         @base_uri = null
 
+        ## RPC Envelope
         @envelope =
             id: null
             opts: {}
             agent: {}
 
+        ## AJAX Settings
         @ajax =
             accepts: 'application/json'
             async: true
@@ -70,24 +78,30 @@ class RPCRequest
         if agent?
             @envelope.agent = agent
 
+    # Fulfill an RPC method server-side
     fulfill: (callbacks={}, config) ->
 
+        ## Put in a default success callback if we're not passed one (useful for development/debug)...
         if not callbacks?.success?
             defaultSuccessCallback = (context, type, data) =>
                 $.apptools.dev.log('RPC', 'RPC succeeded but had no success callback.', @, context, type, data)
             callbacks.success = defaultSuccessCallback
 
+        ## Put in a default failure callback if we're not passed one (useful for development/debug)...
         if not callbacks?.failure?
             defaultFailureCallback = (context) =>
                 $.apptools.dev.error('RPC', 'RPC failed but had no failure callback.', @, context)
             callbacks.failure = defaultFailureCallback
 
+        ## Pass it off to CoreRPCAPI to fulfill
         return $.apptools.api.rpc.fulfillRPCRequest(config, @, callbacks)
 
+    # Set async true/false for this request
     setAsync: (async) ->
         @ajax?.async ?= async
         return @
 
+    # Set whether push headers should be applied
     setPush: (push) ->
         if push == true
             @ajax.push = true
@@ -96,29 +110,37 @@ class RPCRequest
 
         return @
 
+    # Set arbitrary RPC envelope options
     setOpts: (opts) ->
         @envelope?.opts = _.defaults(opts, @envelope?.opts)
         return @
 
+    # Set the RPC envelope agent clause
     setAgent: (agent) ->
         @envelope?.agent ?= agent
         return @
 
+    # Set the RPC action
     setAction: (@action) ->
         return @
 
+    # Set the RPC method
     setMethod: (@method) ->
         return @
 
+    # Set the RPC API
     setAPI: (@api) ->
         return @
 
+    # Set the Base URI
     setBaseURI: (@base_uri) ->
         return @
 
+    # Set the RPC params
     setParams: (@params={}) ->
         return @
 
+    # Format the RPC for communication and return the encoded payload
     payload: ->
         _payload =
             id: @envelope.id
@@ -132,37 +154,58 @@ class RPCRequest
         return _payload
 
 
+# Represents a single RPC response
+class RPCResponse extends CoreObject
+
+    constructor: (args...) ->
+        $.apptools.dev.verbose('RPC', 'RPCResponse is not yet implemented and is currently stubbed.')
+        return
+
+
 ## CoreRPCAPI - kicks off RPC's and mediates with dispatch
 class CoreRPCAPI extends CoreAPI
 
-    constructor: (apptools) ->
+    @mount = 'api'
+    @events = [
+                'RPC_CREATE',
+                'RPC_FULFILL',
+                'RPC_SUCCESS',
+                'RPC_ERROR',
+                'RPC_COMPLETE',
+                'RPC_PROGRESS'
+            ]
 
-        ## Register FCM events
-        apptools.events.register('RPC_CREATE')
-        apptools.events.register('RPC_FULFILL')
-        apptools.events.register('RPC_SUCCESS')
-        apptools.events.register('RPC_ERROR')
-        apptools.events.register('RPC_COMPLETE')
-        apptools.events.register('RPC_PROGRESS')
+    # CoreRPCAPI Constructor
+    constructor: (apptools, window) ->
 
-        ## Use amplify, if we can
-        if window.amplify?
-            apptools.dev.verbose('RPC', 'AmplifyJS detected. Registering.')
-            if apptools?.sys?.drivers
-                apptools.sys.drivers.register('transport', 'amplify', window.amplify, true, true)
+        ## Init state and config
+        @state =
+            sockets:
+                token: '__NULL__'
+                enabled: false
+                status: 'DISCONNECTED'
+                default: null
+                default_host: apptools.config?.rpc?.socket_host? || null
 
-        @base_rpc_uri = '/_api/rpc'
-
+        ## Set default base URI
+        @base_rpc_uri = apptools.config.rpc.base_uri || '/_api/rpc'
+        @socket_host = apptools.config.rpc.socket_host || null
 
         ## Set up request internals
-        original_xhr = $.ajaxSettings.xhr
+        if apptools.sys.libraries.resolve('jQuery') != false
+            original_xhr = $.ajaxSettings.xhr
+
+        else
+            original_xhr = new XMLHTTPRequest()
 
         @internals =
 
+            # RPC Transports
             transports:
 
                 xhr:
                     factory: () =>
+                        ## Create event listener
                         req = original_xhr()
                         if req
                             if typeof req.addEventListener == 'function'
@@ -170,67 +213,103 @@ class CoreRPCAPI extends CoreAPI
                                         apptools.events.trigger('RPC_PROGRESS', {event: ev})
                                 , false)
                         return req
+                websocket:
+                    factory: () =>
+                        if apptools.agent.capabilities.websockets?
+                            if @state.sockets?.enabled? == true
+                                if @state.sockets?.default? == null && @state.sockets?.open?.length == 0
 
+                                    ## Lazy-load first socket
+                                    socket = new apptools.push.socket.establish()
+
+                                    ## Register with state
+                                    @state.sockets.enabled = true
+                                    @state.sockets.default = socket
+                                    @state.sockets.status = 'CONNECTED'
+                                req = {}
+                                return req
+                        else
+                            apptools.dev.error 'RPC', 'Socket factory can\'t produce a socket because the client platform does not support WebSockets.'
+                            throw "SocketsNotSupported: The client platform does not have support for websockets."
+
+            # Default HTTP headers
             config:
                 headers:
                     "X-ServiceClient": ["AppToolsJS/", [
-                                                apptools.sys.version.major.toString(),
-                                                apptools.sys.version.minor.toString(),
-                                                apptools.sys.version.micro.toString(),
-                                                apptools.sys.version.build.toString()].join('.'),
-                                        "-", apptools.sys.version.release.toString()].join('')
+                                                AppTools.version.major.toString(),
+                                                AppTools.version.minor.toString(),
+                                                AppTools.version.micro.toString(),
+                                                AppTools.version.build.toString()].join('.'),
+                                         "-", AppTools.version.release.toString()].join('')
 
                     "X-ServiceTransport": "AppTools/JSONRPC"
 
-        $.ajaxSetup(
+        if apptools.sys.libraries.resolve('jQuery') != false
+            # Splice in our custom factory
+            $.ajaxSetup(
 
-            global: true
-            xhr: () =>
-                return @internals.transports.xhr.factory()
-            headers: @internals.config.headers
+                global: true
+                xhr: () =>
+                    return @internals.transports.xhr.factory()
+                headers: @internals.config.headers
 
-        )
+            )
 
+        # Build internal API
         @rpc =
 
+            # Runtime RPC History
             lastRequest: null
             lastFailure: null
             lastResponse: null
+            history: {}
+
+            # Config
             action_prefix: null
             alt_push_response: false
-            history: {}
             used_ids: []
 
-            factory: (name, base_uri, methods, config) ->
-                $.apptools.api[name] = new RPCAPI(name, base_uri, methods, config)
+            # Creates RPCAPIs
+            factory: (name, base_uri, methods, config) =>
+                apptools.api[name] = new RPCAPI(name, base_uri, methods, config)
 
-            _assembleRPCURL: (method, api=null, prefix=null, base_uri=null) ->
-                if api is null and base_uri is null
+            # Assembles an RPC endpoint URL
+            _assembleRPCURL: (method, api, prefix, base_uri) =>
+                if not api? and not base_uri?
                     throw "[RPC] Error: Must specify either an API or base URI to generate an RPC endpoint."
                 else
-                    if base_uri is null ## if we're working with an API, get the base URI
-                        base_uri = $.apptools.api.base_rpc_uri+'/'+api
+                    if api? ## if we're working with an API, get the base URI
+                        if base_uri?
+                            base_uri = base_uri + '/' + api
+                        else
+                            base_uri = @base_rpc_uri+'/'+api
+                    else
+                        if not base_uri?
+                            base_uri = @base_rpc_uri
 
                     if prefix isnt null
                         return [prefix+base_uri, method].join('.')
                     else
                         return [base_uri, method].join('.')
 
-            provisionRequestID: ->
-                if @used_ids.length > 0
-                    id = Math.max.apply(@, @used_ids)+1
-                    @used_ids.push(id)
+            # Provisions a locally-scoped RPC ID
+            provisionRequestID: =>
+                if @rpc.used_ids.length > 0
+                    id = Math.max.apply(@, @rpc.used_ids)+1
+                    @rpc.used_ids.push(id)
                     return id
                 else
-                    @used_ids.push(1)
+                    @rpc.used_ids.push(1)
                     return 1
 
-            decodeRPCResponse: (data, status, xhr, success, error) ->
+            # Decode an RPC response
+            decodeRPCResponse: (data, status, xhr, success, error) =>
                 success(data, status)
 
-            createRPCRequest: (config) ->
+            # Create an RPC request
+            createRPCRequest: (config) =>
 
-                request = new RPCRequest(@provisionRequestID())
+                request = new RPCRequest(@rpc.provisionRequestID())
 
                 if config.api?
                     request.setAPI(config.api)
@@ -256,20 +335,21 @@ class CoreRPCAPI extends CoreAPI
                 if config.push?
                     request.setPush(config.push)
                 else
-                    request.setPush(@alt_push_response)
+                    request.setPush(@rpc.alt_push_response)
 
-                $.apptools.dev.verbose('RPC', 'New Request', request, config)
-                request.setAction(@_assembleRPCURL(request.method, request.api, @action_prefix, @base_rpc_uri))
+                apptools.dev.verbose('RPC', 'New Request', request, config)
+                request.setAction(@rpc._assembleRPCURL(request.method, request.api, @rpc.action_prefix, @base_rpc_uri))
 
                 return request
 
-            fulfillRPCRequest: (config, request, callbacks) ->
+            # Fulfill a request server-side
+            fulfillRPCRequest: (config, request, callbacks, transport='xhr') =>
 
-                $.apptools.dev.verbose('RPC', 'Fulfill', config, request, callbacks)
+                apptools.dev.verbose('RPC', 'Fulfill', config, request, callbacks)
 
-                @lastRequest = request
+                @rpc.lastRequest = request
 
-                @history[request.envelope.id] =
+                @rpc.history[request.envelope.id] =
                     request: request
                     config: config
                     callbacks: callbacks
@@ -279,11 +359,11 @@ class CoreRPCAPI extends CoreAPI
                         throw "[RPC] Error: Request must specify at least an action or method."
                     if request.base_uri is null
                         if request.api is null
-                            throw "[RPC] Error: Request must have an API or explicity BASE_URI."
+                            throw "[RPC] Error: Request must have an API or explicity defined BASE_URI."
                         else
-                            request.action = @_assembleRPCURL(request.method, request.api, @action_prefix)
+                            request.action = @rpc._assembleRPCURL(request.method, request.api, @rpc.action_prefix)
                     else
-                        request.action = @_assembleRPCURL(request.method, null, @action_prefix, request.base_uri)
+                        request.action = @rpc._assembleRPCURL(request.method, null, @rpc.action_prefix, request.base_uri)
 
                 if request.action is null or request.action is undefined
                     throw '[RPC] Error: Could not determine RPC action.'
@@ -292,10 +372,9 @@ class CoreRPCAPI extends CoreAPI
                     config: config
                     request: request
                     callbacks: callbacks
-                $.apptools.events.trigger('RPC_FULFILL', context)
+                apptools.events.trigger('RPC_FULFILL', context)
 
-                do (request, callbacks) ->
-                    apptools = window.apptools
+                do (apptools, request, callbacks) ->
 
                     xhr_settings =
                         resourceId: request.api+'.'+request.method
@@ -313,72 +392,72 @@ class CoreRPCAPI extends CoreAPI
 
                         beforeSend: (xhr, settings) =>
 
-                            $.apptools.api.rpc.history[request.envelope.id].xhr = xhr;
+                            apptools.api.rpc.history[request.envelope.id].xhr = xhr;
                             callbacks?.status?('beforeSend')
                             return xhr
 
                         error: (xhr, status, error) =>
                             callbacks?.status?('error')
-                            $.apptools.dev.error('RPC', 'Error: ', {error: error, status: status, xhr: xhr})
-                            $.apptools.api.rpc.lastFailure = error
-                            $.apptools.api.rpc.history[request.envelope.id].xhr = xhr
-                            $.apptools.api.rpc.history[request.envelope.id].status = status
-                            $.apptools.api.rpc.history[request.envelope.id].failure = error
+                            apptools.dev.error('RPC', 'Error: ', {error: error, status: status, xhr: xhr})
+                            apptools.api.rpc.lastFailure = error
+                            apptools.api.rpc.history[request.envelope.id].xhr = xhr
+                            apptools.api.rpc.history[request.envelope.id].status = status
+                            apptools.api.rpc.history[request.envelope.id].failure = error
 
                             context =
                                 xhr: xhr
                                 status: status
                                 error: error
 
-                            $.apptools.events.trigger('RPC_ERROR', context)
-                            $.apptools.events.trigger('RPC_COMPLETE', context)
+                            apptools.events.trigger('RPC_ERROR', context)
+                            apptools.events.trigger('RPC_COMPLETE', context)
                             callbacks?.failure?(error)
 
                         success: (data, status, xhr) =>
 
                             if data.status == 'ok'
                                 callbacks?.status?('success')
-                                $.apptools.dev.log('RPC', 'Success', data, status, xhr)
-                                $.apptools.api.rpc.lastResponse = data
-                                $.apptools.api.rpc.history[request.envelope.id].xhr = xhr
-                                $.apptools.api.rpc.history[request.envelope.id].status = status
-                                $.apptools.api.rpc.history[request.envelope.id].response = data
+                                apptools.dev.log('RPC', 'Success', data, status, xhr)
+                                apptools.api.rpc.lastResponse = data
+                                apptools.api.rpc.history[request.envelope.id].xhr = xhr
+                                apptools.api.rpc.history[request.envelope.id].status = status
+                                apptools.api.rpc.history[request.envelope.id].response = data
 
                                 context =
                                     xhr: xhr
                                     status: status
                                     data: data
-                                $.apptools.events.trigger('RPC_SUCCESS', context)
-                                $.apptools.events.trigger('RPC_COMPLETE', context)
+                                apptools.events.trigger('RPC_SUCCESS', context)
+                                apptools.events.trigger('RPC_COMPLETE', context)
 
                                 callbacks?.success?(data.response.content, data.response.type, data)
 
                             else if data.status == 'wait'
                                 callbacks?.status?('wait')
-                                $.apptools.dev.log('RPC', 'PushWait', data, status, xhr)
+                                apptools.dev.log('RPC', 'PushWait', data, status, xhr)
                                 context =
                                     xhr: xhr
                                     status: status
                                     data: data
 
                                 callbacks?.wait?(data, status, xhr)
-                                $.apptools.push.internal.expect(request.envelope.id, request, xhr)
+                                apptools.push.internal.expect(request.envelope.id, request, xhr)
 
                             else if data.status == 'fail'
                                 callbacks?.status?('error')
-                                $.apptools.dev.error('RPC', 'Error: ', {error: data, status: status, xhr: xhr})
-                                $.apptools.api.rpc.lastFailure = data
-                                $.apptools.api.rpc.history[request.envelope.id].xhr = xhr
-                                $.apptools.api.rpc.history[request.envelope.id].status = status
-                                $.apptools.api.rpc.history[request.envelope.id].failure = data
+                                apptools.dev.error('RPC', 'Error: ', {error: data, status: status, xhr: xhr})
+                                apptools.api.rpc.lastFailure = data
+                                apptools.api.rpc.history[request.envelope.id].xhr = xhr
+                                apptools.api.rpc.history[request.envelope.id].status = status
+                                apptools.api.rpc.history[request.envelope.id].failure = data
 
                                 context =
                                     xhr: xhr
                                     status: status
                                     error: data
 
-                                $.apptools.events.trigger('RPC_ERROR', context)
-                                $.apptools.events.trigger('RPC_COMPLETE', context)
+                                apptools.events.trigger('RPC_ERROR', context)
+                                apptools.events.trigger('RPC_COMPLETE', context)
                                 callbacks?.failure?(data)
 
                             else
@@ -387,43 +466,45 @@ class CoreRPCAPI extends CoreAPI
 
                         statusCode:
 
-                            404: ->
-                                $.apptools.dev.error('RPC', 'HTTP/404', 'Could not resolve RPC action URI.')
-                                $.apptools.events.trigger('RPC_ERROR', message: 'RPC 404: Could not resolve RPC action URI.', code: 404)
+                            404: =>
+                                apptools.dev.error('RPC', 'HTTP/404', 'Could not resolve RPC action URI.')
+                                apptools.events.trigger('RPC_ERROR', message: 'RPC 404: Could not resolve RPC action URI.', code: 404)
 
                             403: ->
-                                $.apptools.dev.error('RPC', 'HTTP/403', 'Not authorized to access the specified endpoint.')
-                                $.apptools.events.trigger('RPC_ERROR', message: 'RPC 403: Not authorized to access the specified endpoint.', code: 403)
+                                apptools.dev.error('RPC', 'HTTP/403', 'Not authorized to access the specified endpoint.')
+                                apptools.events.trigger('RPC_ERROR', message: 'RPC 403: Not authorized to access the specified endpoint.', code: 403)
 
                             500: ->
-                                $.apptools.dev.error('RPC', 'HTTP/500', 'Internal server error.')
-                                $.apptools.events.trigger('RPC_ERROR', message: 'RPC 500: Woops! Something went wrong. Please try again.', code: 500)
+                                apptools.dev.error('RPC', 'HTTP/500', 'Internal server error.')
+                                apptools.events.trigger('RPC_ERROR', message: 'RPC 500: Woops! Something went wrong. Please try again.', code: 500)
 
-                    if $.apptools?.sys?.drivers
-                        amplify = $.apptools.sys.drivers.resolve('transport', 'amplify')
-                        if amplify? and amplify is not false
-                            $.apptools.dev.verbose('RPC', 'Fulfilling with AmplifyJS adapter.')
-                            xhr_action = amplify.request
-                            xhr = xhr_action(xhr_settings)
-                        else
-                            $.apptools.dev.verbose('RPC', 'Fulfilling with AJAX adapter.', xhr_settings)
-                            xhr = $.ajax(xhr_settings.url, xhr_settings)
+
+                    driver = apptools.sys.drivers.resolve('transport')
+
+                    if driver.name == 'amplify'
+                        apptools.dev.verbose('RPC', 'Fulfilling with AmplifyJS transport adapter.')
+                        xhr_action = driver.driver.request
+                        xhr = xhr_action(xhr_settings)
+
+                    else if driver.name == 'jquery'
+                        apptools.dev.verbose('RPC', 'Fulfilling with jQuery AJAX transport adapter.', xhr_settings)
+                        xhr = jQuery.ajax(xhr_settings.url, xhr_settings)
+
                     else
-                        $.apptools.dev.verbose('RPC', 'Fulfilling with AJAX adapter.', xhr_settings)
-                        xhr = $.ajax(xhr_settings.url, xhr_settings)
+                        apptools.dev.error 'RPC', 'Native RPC adapter is currently stubbed.'
+                        throw "[RPC]: No valid AJAX transport adapter found."
 
-                    $.apptools.dev.verbose('RPC', 'Resulting XHR: ', xhr)
+                    apptools.dev.verbose('RPC', 'Resulting XHR: ', xhr)
 
                 return {id: request.envelope.id, request: request}
 
         @ext = null
 
-
-        @registerAPIMethod = (api, name, base_uri, config) ->
-            if $.apptools?.sys?.drivers
-                amplify = $.apptools.sys.drivers.resolve('transport', 'amplify')
+        @registerAPIMethod = (api, name, base_uri, config) =>
+            if apptools?.sys?.drivers
+                amplify = apptools.sys.drivers.resolve('transport', 'amplify')
                 if amplify isnt false
-                    $.apptools.dev.log('RPCAPI', 'Registering request procedure "'+api+'.'+name+'" with AmplifyJS.')
+                    apptools.dev.log('RPCAPI', 'Registering request procedure "'+api+'.'+name+'" with AmplifyJS.')
 
                     resourceId = api+'.'+name
                     base_settings =
@@ -431,8 +512,8 @@ class CoreRPCAPI extends CoreAPI
                         type: 'POST'
                         dataType: 'json'
                         contentType: 'application/json'
-                        url: @api._assembleRPCURL(name, api, null, base_uri)
-                        decoder: @api.decodeRPCResponse
+                        url: @rpc._assembleRPCURL(name, api, null, base_uri)
+                        decoder: @rpc.decodeRPCResponse
 
                     if config.caching?
                         if config.caching == true
@@ -442,7 +523,19 @@ class CoreRPCAPI extends CoreAPI
                         amplify.request.define(resourceId, "ajax", base_settings)
 
 
-# Register globals
-window.RPCAPI = RPCAPI
-window.RPCRequest = RPCRequest
-window.CoreRPCAPI = CoreRPCAPI
+class RPCDriver extends CoreInterface
+
+    @methods = []
+    @export = "private"
+
+    constructor: () ->
+        return
+
+
+# Export classes
+@__apptools_preinit.abstract_base_classes.push RPCAPI
+@__apptools_preinit.abstract_base_classes.push RPCDriver
+@__apptools_preinit.abstract_base_classes.push CoreRPCAPI
+@__apptools_preinit.abstract_base_classes.push RPCRequest
+@__apptools_preinit.abstract_base_classes.push RPCResponse
+@__apptools_preinit.abstract_feature_interfaces.push {adapter: RPCDriver, name: "transport"}

@@ -1,4 +1,4 @@
-{%- macro build_page_object(services, config) -%}
+{%- macro build_page_object(services, config, page) -%}
 
 $(document).ready(function (){
 
@@ -16,10 +16,16 @@ $(document).ready(function (){
 		{%- endif -%}
 	{% endblock %}
 
-	{% if true %}
+	{% if services != null %}
 	{%- for service, action, cfg, opts in services -%}
 		$.apptools.api.rpc.factory('{{ service }}', '{{ action }}', [{%- for i, method in enumerate(cfg.methods) -%}'{{ method }}'{%- if i != (len(cfg.methods) - 1) %},{%- endif -%}{%- endfor -%}], {%- autoescape false -%}{{ util.converters.json.dumps(opts) }}{%- endautoescape -%});
 	{%- endfor -%}
+	{% endif %}
+
+	{% if page.open_channel %}
+	{% if page.channel_token %}
+		$.apptools.push.channel.establish("{{ page.channel_token }}").listen();
+	{% endif %}
 	{% endif %}
 
 	{% block userobj %}

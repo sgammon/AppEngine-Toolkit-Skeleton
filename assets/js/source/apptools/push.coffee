@@ -1,25 +1,28 @@
 # Events API
 class CorePushAPI extends CoreAPI
 
-    constructor: (apptools) ->
+    @mount = 'push'
+    @events = [
+                'PUSH_INIT',
+                'PUSH_READY',
+                'PUSH_STATE_CHANGE',
+                'PUSH_SOCKET_OPEN',
+                'PUSH_SOCKET_ESTABLISH',
+                'PUSH_SOCKET_ACTIVITY',
+                'PUSH_SOCKET_ACTIVITY_FINISH',
+                'PUSH_SOCKET_ERROR',
+                'PUSH_SOCKET_CLOSE'
+            ]
 
-        ## Register events
-        apptools.events.register('PUSH_INIT')
-        apptools.events.register('PUSH_READY')
-        apptools.events.register('PUSH_STATE_CHANGE')
-        apptools.events.register('PUSH_CHANNEL_OPEN')
-        apptools.events.register('PUSH_SOCKET_ESTABLISH')
-        apptools.events.register('PUSH_SOCKET_ACTIVITY')
-        apptools.events.register('PUSH_SOCKET_ACTIVITY_FINISH')
-        apptools.events.register('PUSH_SOCKET_ERROR')
-        apptools.events.register('PUSH_CHANNEL_CLOSE')
+    constructor: (apptools, window) ->
 
+        ## Setup PushAPI state
         @state =
             ready: false
-            status: null
+            status: 'init'
 
             transport:
-                socket: null
+                sockets: []
                 channel: null
 
             callbacks:
@@ -33,95 +36,137 @@ class CorePushAPI extends CoreAPI
                 token: null
 
 
-        ## Migrate events to PUSH_STATE_CHANGE
-        apptools.events.hook('PUSH_READY', (args...) -> $.apptools.events.trigger('PUSH_STATE_CHANGE', args...))
-        apptools.events.hook('PUSH_SOCKET_ESTABLISH', (args...) -> $.apptools.events.trigger('PUSH_STATE_CHANGE', args...))
-        apptools.events.hook('PUSH_SOCKET_ERROR', (args...) -> $.apptools.events.trigger('PUSH_STATE_CHANGE', args...))
+        ## Bridge events to PUSH_STATE_CHANGE
+        apptools.events.bridge ['PUSH_READY', 'PUSH_SOCKET_ESTABLISH', 'PUSH_SOCKET_ERROR', 'PUSH_SOCKET_OPEN', 'PUSH_SOCKET_CLOSE'], 'PUSH_STATE_CHANGE'
 
         ## Special handlers for OPEN and CLOSE, to enable integration with the CoreRPC API
-        apptools.events.hook('PUSH_CHANNEL_OPEN', (args...) ->
-            $.apptools.events.trigger('PUSH_STATE_CHANGE', args...)
-            $.apptools.api.rpc.alt_push_response = true
-        )
+        apptools.events.hook 'PUSH_SOCKET_OPEN', (args...) =>
+            apptools.api.rpc.alt_push_response = true
 
-        apptools.events.hook('PUSH_CHANNEL_CLOSE', (args...) ->
-            $.apptools.events.trigger('PUSH_STATE_CHANGE', args...)
-            $.apptools.api.rpc.alt_push_response = false
-        )
+        apptools.events.hook 'PUSH_SOCKET_CLOSE', (args...) =>
+            apptools.api.rpc.alt_push_response = false
 
 
+        ## Push events
         @events =
 
-            on_open: () =>
+            ## On socket/channel open
+            on_open: (socket) =>
 
-                $.apptools.dev.verbose('PushSocket', 'Message transport opened.')
-                @state.status = 'ready'
-                apptools.events.trigger('PUSH_CHANNEL_OPEN', @state)
+                # Set state, trigger CHANNEL_OPEN, log this
+                if @state.transport.sockets.length = 0
+                    @state.status = 'ready'
+
+                apptools.events.trigger 'PUSH_SOCKET_OPEN', @state
+                apptools.dev.verbose 'PushSocket', 'Message transport opened.'
 
 
-            on_message: (payload) =>
+            ## On socket/channel message
+            on_message: (socket, payload) =>
 
-                $.apptools.dev.verbose('PushSocket', 'Message received.', payload)
+                # Set state, log this
                 @state.status = 'receiving'
-                apptools.events.trigger('PUSH_SOCKET_ACTIVITY', @state)
+                apptools.dev.verbose 'PushSocket', 'Message received.', payload
+
+                # Trigger ACTIVITY, then callback, then ACTIVITY_FINISH
+                apptools.events.trigger 'PUSH_SOCKET_ACTIVITY', @state
                 @state.callbacks.activity?(payload)
-                apptools.events.trigger('PUSH_SOCKET_ACTIVITY_FINISH', @state)
+                apptools.events.trigger 'PUSH_SOCKET_ACTIVITY_FINISH', @state
 
-            on_error: (error) =>
+            ## On socket/channel error
+            on_error: (socket, error) =>
 
-                $.apptools.dev.error('PushSocket', 'Message transport error.', error)
+                # Set state, log this, trigger SOCKET_ERROR
                 @state.status = 'error'
-                apptools.events.trigger('PUSH_SOCKET_ERROR', @state)
+                apptools.dev.error 'PushSocket', 'Message transport error.', error
+                apptools.events.trigger 'PUSH_SOCKET_ERROR', @state
 
-            on_close: () =>
+            ## On socket/channel close
+            on_close: (socket) =>
 
-                $.apptools.dev.verbose('PushSocket', 'Message transport closed.')
-
-                @state.status = 'close'
+                # Set state, log this, trigger CHANNEL_CLOSE
                 @state.ready = false
-                apptools.events.trigger('PUSH_CHANNEL_CLOSE', @state)
+                @state.status = 'close'
+                apptools.dev.verbose 'PushSocket', 'Message transport closed.'
+                apptools.events.trigger 'PUSH_SOCKET_CLOSE', @state
 
 
+        ## Push internals
         @internal =
 
+            ## Open a GAE channel connection
             open_channel: (token) =>
 
-                apptools.events.trigger('PUSH_INIT', token)
+                # Trigger push_init
+                apptools.events.trigger 'PUSH_INIT', token: token, type: 'channel'
 
                 # copy over token
                 @state.config.token = token
 
                 # establish transport handles
                 @state.transport.channel = new goog.appengine.Channel @state.config.token
-                return @.internal
+                return @internal._add_socket @state.transport.channel
 
+            ## Open an HTML5 WebSocket
+            open_websocket: (token, server) =>
 
-            open_socket: () =>
+                # Trigger push_init
+                apptools.events.trigger 'PUSH_INIT', token: token, server: server, type: 'websocket'
 
-                # open socket
-                @state.transport.socket = @state.transport.channel.open()
+                apptools.dev.log 'Push', "WARNING: WebSockets support is currently experimental."
+                return @internal._add_socket @state.transport.socket
 
-                apptools.events.trigger('PUSH_SOCKET_ESTABLISH', @state.transport.socket)
+            ## Open a socket, optionally through a GAE channel
+            _add_socket: (transport, callbacks) =>
 
-                # set event handlers
-                @state.transport.socket.onopen = @events.on_open
-                @state.transport.socket.onmessage = @events.on_message
-                @state.transport.socket.onerror = @events.on_error
-                @state.transport.socket.onclose = @events.on_close
+                # Open socket
+                socket = transport.open()
+                @state.transport.sockets.push socket
+                apptools.events.trigger 'PUSH_SOCKET_ESTABLISH', socket
 
-                return @.internal
+                # Set event handlers OR global event handlers
+                socket.onopen = (args...) => @events.on_open(socket, args...)
+                socket.onmessage = (args...) => @events.on_message(socket, args...)
+                socket.onerror = (args...) => @events.on_error(socket, args...)
+                socket.onclose = (args...) => @events.on_close(socket, args...)
 
-            listen: (callbacks) =>
-                @state.callbacks = _.defaults(callbacks, @state.callbacks)
-                @state.ready = true
-                return @.internal
+                return @internal
 
+            ## Expect a push response
             expect: (id, request, xhr) =>
+
+                # Pass off to expect callback
                 @state?.callbacks?.expect?(id, request, xhr)
-                return @.internal
+                return @internal
+
+        ## GAE Channel Stuff
+        @channel =
+            establish: (token) =>
+                return @internal.open_channel token
+
+        ## Websocket Stuff
+        @socket =
+            establish: (token, host=null) =>
+                return @internal.open_websocket(token, host || apptools.config.sockets.host)
+
+        ## Enable the API
+        @listen = (callbacks) =>
+
+            # Set global callbacks and set state
+            @state.callbacks = _.defaults callbacks, @state.callbacks
+            @state.ready = true
+            return @.internal
 
 
-        @establish = (token, callbacks) =>
-            @state.status = 'init'
-            @internal.open_channel(token).open_socket().listen(callbacks)
-            return @
+class PushDriver extends CoreInterface
+
+    @methods = []
+    @export = "private"
+
+    constructor: () ->
+        return
+
+
+@__apptools_preinit.abstract_base_classes.push PushDriver
+@__apptools_preinit.abstract_base_classes.push CorePushAPI
+@__apptools_preinit.abstract_feature_interfaces.push {adapter: PushDriver, name: "transport"}

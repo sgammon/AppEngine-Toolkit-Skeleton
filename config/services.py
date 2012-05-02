@@ -10,6 +10,7 @@ config = {}
 # Project Services
 config['apptools.project.services'] = {
 
+    'debug': True,    # Return extra debug info in responses
     'enabled': True,  # Disable API services system wide
     'logging': True,  # Logging for service request handling
 

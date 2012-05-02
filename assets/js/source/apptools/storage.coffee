@@ -1,28 +1,29 @@
 # Storage API
 class CoreStorageAPI extends CoreAPI
 
-    constructor: (apptools) ->
-
-        ## 1: Register storage events
-        apptools.events.register('STORAGE_INIT')
-        apptools.events.register('STORAGE_READY')
-        apptools.events.register('STORAGE_ERROR')
-        apptools.events.register('STORAGE_ACTIVITY')
-
-        # Collection Events
-        apptools.events.register('COLLECTION_SCAN')
-        apptools.events.register('COLLECTION_CREATE')
-        apptools.events.register('COLLECTION_DESTROY')
-        apptools.events.register('COLLECTION_UPDATE')
-        apptools.events.register('COLLECTION_SYNC')
-
-        # Read/Write/Delete
-        apptools.events.register('STORAGE_READ')
-        apptools.events.register('STORAGE_WRITE')
-        apptools.events.register('STORAGE_DELETE')
+    @mount = 'storage'
+    @events = [
+                # Storage events
+                'STORAGE_INIT',
+                'STORAGE_READY',
+                'STORAGE_ERROR',
+                'STORAGE_ACTIVITY',
+                'STORAGE_READ',
+                'STORAGE_WRITE',
+                'STORAGE_DELETE'
 
 
-        ## 2: Create internal state
+                # Collection events
+                'COLLECTION_SCAN',
+                'COLLECTION_CREATE',
+                'COLLECTION_DESTROY',
+                'COLLECTION_UPDATE',
+                'COLLECTION_SYNC'
+            ]
+
+    constructor: (apptools, window) ->
+
+        ## 1: Create internal state
         @_state =
 
             # Runtime/opt data
@@ -69,7 +70,7 @@ class CoreStorageAPI extends CoreAPI
             collection_kind_map: {}
 
 
-        ## 3: Internal Methods
+        ## 2: Internal Methods
         @internal =
 
             check_support: (modernizr) ->
@@ -77,7 +78,7 @@ class CoreStorageAPI extends CoreAPI
             provision_collection: (name, adapter, callback) ->
 
 
-        ## 4: Public Methods
+        ## 3: Public Methods
         @get = () =>
         @list = () =>
         @count = () =>
@@ -87,11 +88,26 @@ class CoreStorageAPI extends CoreAPI
         @sync = () =>
 
 
-        ## 5: Runtime setup
-        @enable = () =>
-            apptools.events.trigger('STORAGE_INIT')
-            apptools.events.trigger('STORAGE_READY')
+        ## 4: Runtime setup
+        @_init = () =>
+            apptools.dev.verbose 'Storage', 'Storage support is currently stubbed.'
+            apptools.events.trigger 'STORAGE_INIT'
+            apptools.events.trigger 'STORAGE_READY'
 
-        ## 6: Bind/bridge events
-        apptools.events.bridge(['STORAGE_READ', 'STORAGE_WRITE', 'STORAGE_DELETE'], 'STORAGE_ACTIVITY')
-        apptools.events.bridge(['COLLECTION_CREATE', 'COLLECTION_UPDATE', 'COLLECTION_DESTROY', 'COLLECTION_SYNC', 'COLLECTION_SCAN'], 'STORAGE_ACTIVITY')
+        ## 5: Bind/bridge events
+        apptools.events.bridge ['STORAGE_READ', 'STORAGE_WRITE', 'STORAGE_DELETE'], 'STORAGE_ACTIVITY'
+        apptools.events.bridge ['COLLECTION_CREATE', 'COLLECTION_UPDATE', 'COLLECTION_DESTROY', 'COLLECTION_SYNC', 'COLLECTION_SCAN'], 'STORAGE_ACTIVITY'
+
+
+class StorageDriver extends CoreInterface
+
+    @methods = []
+    @export = "private"
+
+    constructor: () ->
+        return
+
+
+@__apptools_preinit.abstract_base_classes.push StorageDriver
+@__apptools_preinit.abstract_base_classes.push CoreStorageAPI
+@__apptools_preinit.abstract_feature_interfaces.push {adapter: StorageDriver, name: "storage"}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" main.py - everything starts here. """
+''' main.py - everything starts here. '''
 
 import os
 
@@ -15,6 +15,7 @@ except ImportError, e:
 import config
 import logging
 import webapp2
+import apptools
 
 from urls import get_rules
 
@@ -23,7 +24,7 @@ rules = get_rules()
 
 def enable_appstats(app):
 
-    """ Utility function that enables appstats middleware."""
+    ''' Utility function that enables appstats middleware. '''
 
     from google.appengine.ext.appstats.recording import appstats_wsgi_middleware
     app.app = appstats_wsgi_middleware(app.app)
@@ -32,7 +33,7 @@ def enable_appstats(app):
 
 def enable_apptrace(app):
 
-    """ Utility function that enables apptrace middleware. """
+    ''' Utility function that enables apptrace middleware. '''
 
     from apptrace import middleware
     middleware.Config.URL_PATTERNS = ['^/$']
@@ -42,7 +43,7 @@ def enable_apptrace(app):
 
 def enable_jinja2_debugging():
 
-    """ Enables blacklisted modules that help Jinja2 debugging. """
+    ''' Enables blacklisted modules that help Jinja2 debugging. '''
 
     # Enables better debugging info for errors in Jinja2 templates.
     from google.appengine.tools.dev_appserver import HardenedModulesHook
@@ -51,14 +52,14 @@ def enable_jinja2_debugging():
 
 def run(app):
 
-    """ Default run case - no profiler, via CGI. """
+    ''' Default run case - no profiler, via CGI. '''
 
     app.run()
 
 
 def run_wsgi(app, environ, start_response):
 
-    """ Run in WSGI mode with the Python 2.7 runtime. """
+    ''' Run in WSGI mode with the Python 2.7 runtime. '''
 
     return app(environ, start_response)
 
@@ -71,7 +72,7 @@ def enable_filesystem_wb():
 
 def main(environ=None, start_response=None):
 
-    """ INCEPTION! :) """
+    ''' INCEPTION! :) '''
 
     global run
     global rules

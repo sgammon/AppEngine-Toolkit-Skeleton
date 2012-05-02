@@ -1,15 +1,24 @@
 # Agent/Capabilities API
 class CoreAgentAPI extends CoreAPI
 
-    constructor: (apptools) ->
+    @mount = 'agent'
+    @events = ['UA_DISCOVER']
 
+    constructor: (apptools, window) ->
+
+        # Setup state
         @_data = {}
-        @platform = {}
 
+        # Expose platform & client results
+        @platform = {}
         @capabilities = {}
+
+        # Modernizr can do it better
         if apptools.lib.modernizr?
             @capabilities = apptools.lib.modernizr
+        @capabilities.simple = {}
 
+        # Setup lookup data for User-Agent
         @_data =
 
             browsers: [
@@ -137,12 +146,14 @@ class CoreAgentAPI extends CoreAPI
         else
             return parseFloat(dataString.substring(index+@_data.versionSearchString.length+1))
 
+    # Discover info via User-Agent string
     discover: ->
 
+        # Match browser
         browser = @_makeMatch(@_data.browsers) || "unknown"
-
         version = @_makeVersion(navigator.userAgent) || @_makeVersion(navigator.appVersion) || "unknown"
 
+        # Match OS
         os = @_makeMatch(@_data.os) || "unknown"
         if browser is 'iPod/iPhone' || browser is 'Android'
             type = 'mobile'
@@ -156,12 +167,17 @@ class CoreAgentAPI extends CoreAPI
             browser: browser
             version: version
             flags:
+                online: navigator.onLine || true
                 mobile: mobile
                 webkit: $.browser.webkit
                 msie: $.browser.msie
                 opera: $.browser.opera
                 mozilla: $.browser.mozilla
 
-        @capabilities.simple =
-            cookies: navigator.cookieEnabled
-            ajax: $.support.ajax
+        # Simple capabilities exported by navigator/jquery
+        @capabilities.simple.cookies = navigator.cookieEnabled
+        if window.jQuery?
+            @capabilities.simple.ajax = $.support.ajax
+
+
+@__apptools_preinit.abstract_base_classes.push CoreAgentAPI

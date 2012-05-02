@@ -84,6 +84,18 @@ _config['apptools.system'] = {
 
 }
 
+## Platform Config
+_config['apptools.system.platform'] = {
+
+    'installed_platforms': [
+
+        {'name': 'Generic WSGI', 'path': 'apptools.platform.generic.GenericWSGI'},
+        {'name': 'Google App Engine', 'path': 'apptools.platform.appengine.GoogleAppEngine'}
+
+    ]
+
+}
+
 
 def systemLog(message, _type='debug'):
 

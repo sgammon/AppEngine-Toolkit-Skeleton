@@ -1,27 +1,17 @@
 # -*- coding: utf-8 -*-
 import logging
-
-try:
-    import json
-except ImportError, e:
-    try:
-        import simplejson as json
-    except ImportError, e:
-        try:
-            from django.utils import simplejson as json
-        except ImportError, e:
-            logging.critical('Could not find compatible JSON adapter. Imploding.')
-            raise
-        finally:
-            exit()
-
 import bootstrap
 bootstrap.AppBootstrapper.prepareImports()
+
+import json
 
 try:
     import ndb
 except ImportError, e:
-    from google.appengine.ext import ndb
+    try:
+        from google.appengine.ext import ndb
+    except ImportError, e:
+        logging.warning('Could not import NDB.')
 
 import config
 
@@ -41,14 +31,14 @@ services_config = config.config.get('apptools.project.services')
 
 def core_log(message, level='debug'):
 
-    """ Outputs properly formatted log messages from this file. """
+    ''' Outputs properly formatted log messages from this file. '''
 
     logging.info('SERVICES_CORE: ' + str(message))
 
 
 def enable_appstats(app):
 
-    """ Utility function that enables appstats middleware."""
+    ''' Utility function that enables appstats middleware.'''
 
     from google.appengine.ext.appstats import recording
     app = recording.appstats_wsgi_middleware(app)
@@ -57,7 +47,7 @@ def enable_appstats(app):
 
 def enable_apptrace(app):
 
-    """ Utility function that enables apptrace middleware. """
+    ''' Utility function that enables apptrace middleware. '''
 
     from apptrace import middleware
     middleware.Config.URL_PATTERNS = ['^/$']
@@ -67,7 +57,7 @@ def enable_apptrace(app):
 
 def generateServiceMappings(svc_cfg, registry_path=forms.DEFAULT_REGISTRY_PATH):
 
-    """ Utility function that reads the services config and generates URL mappings to service classes. """
+    ''' Utility function that reads the services config and generates URL mappings to service classes. '''
 
     services = []
 
@@ -112,7 +102,7 @@ def generateServiceMappings(svc_cfg, registry_path=forms.DEFAULT_REGISTRY_PATH):
 
 def enable_jinja2_debugging():
 
-    """ Enables blacklisted modules that help Jinja2 debugging. """
+    ''' Enables blacklisted modules that help Jinja2 debugging. '''
 
     # Enables better debugging info for errors in Jinja2 templates.
     from google.appengine.tools.dev_appserver import HardenedModulesHook

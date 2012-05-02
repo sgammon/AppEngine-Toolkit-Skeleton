@@ -20,7 +20,7 @@
 {% block page_services %}
 	{%- if page.services -%}
 	{% from "macros/page_object.js" import build_page_object %}
-	{{ build_page_object(page.services.services_manifest, page.services.config) }}
+	{{ build_page_object(page.services.services_manifest, page.services.config, page) }}
 	{%- endif -%}
 {% endblock %}
 
