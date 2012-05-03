@@ -9,7 +9,11 @@
 
 <!-- Base Scripts -->
 <script src="/_ah/channel/jsapi"></script>
+{%- if util.api.users.is_current_user_admin() -%}
+<script src="{{ asset.script('admin', 'apptools') }}"></script> {# include admin tools if the user is logged in and is an app admin #}
+{%- else -%}
 <script src="{{ asset.script('base', 'apptools') }}"></script>
+{%- endif -%}
 
 {# <!-- Project Scripts --> #}
 

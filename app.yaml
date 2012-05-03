@@ -186,7 +186,7 @@ handlers:
   upload: static/(.*)
   expiration: "0m"
 
-# HTML5 Appcache Manifest
+# Static HTML5 Appcache Manifest
 - url: /(.*\.(appcache|manifest))
   mime_type: text/cache-manifest
   static_files: static/appcache/\1
@@ -205,16 +205,9 @@ handlers:
   static_dir: static
 
 
-###### API Requests go to the Services Gateway
-- url: /_api/rpc.*
-  script: main.services
-  login: optional
-  auth_fail_action: unauthorized
-
-
 ###### Everything else goes to AppTools
 - url: /.*
   login: optional
   secure: optional
-  script: main.main
+  script: lib.apptools.dispatch.gateway
   auth_fail_action: redirect

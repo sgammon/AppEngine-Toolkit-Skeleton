@@ -1,22 +1,29 @@
 # -*- coding: utf-8 -*-
+
 """
 
     ###################################### Services configuration. ######################################
 
+    Configuration for the AppTools service layer, including a list of installed userland API services.
+
 
 """
+
+import hashlib
+
 config = {}
 
 # Project Services
 config['apptools.project.services'] = {
 
-    'debug': True,    # Return extra debug info in responses
+    'debug': False,    # Return extra debug info in responses
     'enabled': True,  # Disable API services system wide
-    'logging': True,  # Logging for service request handling
+    'logging': False,  # Logging for service request handling
 
     # Module-level (default) config (NOT IMPLEMENTED YET)
     'config': {
 
+        'hmac_hash': hashlib.sha512,  # Hash algorithm to use for HMAC signatures
         'url_prefix': '/_api/rpc',  # Prefix for all service invocation URLs
         'secret_key': 'vjvbhvb(*B(#&@G#cvbn9dnc9*BN(!*B76cv23',  # Secret key for generating HMAC signings
 
@@ -66,6 +73,22 @@ config['apptools.services'] = {
         'apptrace': {'enabled': False},  # memory usage profiling
         'profiler': {'enabled': False}   # CPU usage profiling
     },
+
+    'mappers': [
+
+        # Feed-Format Mappers
+        {'name': 'RSS', 'enabled': False, 'path': 'apptools.services.mappers.RSSRPCMapper'},
+        {'name': 'ATOM', 'enabled': False, 'path': 'apptools.services.mappers.ATOMRPCMapper'},
+
+        # *RPC Mappers
+        {'name': 'XMLRPC', 'enabled': False, 'path': 'apptools.services.mappers.XMLRPCMapper'},
+        {'name': 'JSONRPC', 'enabled': True, 'path': 'apptools.services.mappers.JSONRPCMapper'},
+
+        # Other Mappers
+        {'name': 'Protobuf', 'enabled': True, 'path': 'apptools.services.mappers.ProtobufRPCMapper'},
+        {'name': 'URLEncoded', 'enabled': True, 'path': 'apptools.services.mappers.URLEncodedRPCMapper'}
+
+    ],
 
     'middleware': [
 

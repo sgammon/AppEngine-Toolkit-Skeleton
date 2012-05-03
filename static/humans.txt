@@ -13,7 +13,7 @@
 
 /* SITE */
   Standards: HTML5, CSS3
-  Components: Modernizr, jQuery, BackboneJS, AmplifyJS, AppToolsJS
+  Components: AppTools, Modernizr, jQuery, BackboneJS, AmplifyJS, AppToolsJS
   Software:
 
 
@@ -41,6 +41,14 @@
                    :-:///////:-            -:/://
                      -////:-                 --//:
                        --                       -:
+
+
+/* LICENSES */
+  Embedded software licenses included below. In some cases, AppTools may minify embedded JavaScript
+  libraries, thereby removing their included licensing information. Those licenses have been included
+  below, so they are *always* shipped with the compiled distribution. This page is referenced from every
+  generated AppTools handler.
+
 
 /*
  * AmplifyJS 1.1.0 - Core, Store, Request
@@ -83,7 +91,7 @@
 */
 
 /**
- * dom storage adapter
+ * lawnchair dom storage adapter
  * ===
  * - originally authored by Joseph Pecoraro
  *
@@ -91,44 +99,44 @@
 //
 
 /**
- * indexed db adapter
+ * lawnchair indexed db adapter
  * ===
  * - originally authored by Vivian Li
  *
 */
 
 /**
- * ie userdata adapter
+ * lawnchair ie userdata adapter
  *
 */
 
-/** window name adapter
+/** lawnchair window name adapter
  * // window.name code couresy Remy Sharp: http://24ways.org/2009/breaking-out-the-edges-of-the-browser
  *
 */
 
  /**
- * webkit sqlite adapter
+ * lawnchair webkit sqlite adapter
  *
 */
 
 /**
- * aggregation plugin
+ * lawnchair aggregation plugin
  *
 */
 
 /**
- * callbacks plugin
+ * lawnchair callbacks plugin
  *
 */
 
 /**
- * pagination plugin
+ * lawnchair pagination plugin
  *
 */
 
  /**
- * query plugin
+ * lawnchair query plugin
  *
  * // - NOT jsonPath or jsonQuery which are horrendously complex and fugly
  * // - simple query syntax 'its just javascript'
@@ -219,7 +227,7 @@
  *
 */
 
-/*! Copyright (c) 2011 Brandon Aaron (http://brandonaaron.net)
+/*! jQuery.Mousewheel - Copyright (c) 2011 Brandon Aaron (http://brandonaaron.net)
  * Licensed under the MIT License (LICENSE.txt).
  *
  * Thanks to: http://adomas.org/javascript-mouse-wheel/ for some pointers.
@@ -260,5 +268,3 @@
  * @version 1.2.2
  * http://flesler.blogspot.com/2008/02/jqueryserialscroll.html
  */
-
- /*! fancyBox v2.0.4 fancyapps.com | fancyapps.com/fancybox/#license */

@@ -1,13 +1,18 @@
+<!doctype html>
 {%- block _tpl_root -%}
 {% if not page.manifest %}
+<!--[if IEMobile 7]><html class="no-js iem7" lang="en" prefix="og: http://ogp.me/ns#"><![endif]-->
+<!--[if (gt IEMobile 7)|!(IEMobile)]><!--><html class="no-js" lang="en" prefix="og: http://ogp.me/ns#"><!--<![endif]-->
 <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en" prefix="og: http://ogp.me/ns#"> <![endif]-->
 <!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en" prefix="og: http://ogp.me/ns#"> <![endif]-->
 <!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en" prefix="og: http://ogp.me/ns#"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" prefix="og: http://ogp.me/ns#"> <!--<![endif]-->
 {% else %}
+<!--[if IEMobile 7]><html class="no-js iem7" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"><![endif]-->
+<!--[if (gt IEMobile 7)|!(IEMobile)]><!--><html class="no-js" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"><!--<![endif]-->
 <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <![endif]-->
-<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <![endif]-->
-<!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <![endif]-->
+<!--[if (IE 7)&!(IEMobile)]>    <html class="no-js ie7 oldie" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <![endif]-->
+<!--[if (IE 8)&!(IEMobile)]>    <html class="no-js ie8 oldie" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <!--<![endif]-->
 {% endif %}
 
@@ -67,10 +72,15 @@
 		{%- block mobile -%}
 		{% if page.ios or util.config.debug %}
 		<!-- Mobile/Extras -->
+		<meta name="MobileOptimized" content="320">
+		<meta name="HandheldFriendly" content="True">
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
 		<link rel="apple-touch-icon" href="{{ asset.image('mobile/ios', 'touch-icon.png') }}" />
 		<link rel="apple-touch-startup-image" href="{{ asset.image('mobile/ios', 'iphone-splash.png') }}" />
+		<link rel="apple-touch-icon-precomposed" href="{{ asset.image('mobile/ios', 'touch-icon-precomposed.png') }}">
+		<link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{ asset.image('mobile/ios', 'apple-touch-icon.png') }}">
 		{% endif %}
 		{%- endblock -%}
 

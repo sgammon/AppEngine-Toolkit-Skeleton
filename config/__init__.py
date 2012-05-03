@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+
+'''
+
+App Config
+
+This directory holds all of your apps' configuration info. AppTools can stitch together multiple config
+files, as long as they export a `config` dictionary (add config files below in `apptools.system.include`...).
+
+AppTools ships with a few other config files in this folder.
+
+-sam (<sam@momentum.io>)
+
+'''
+
 import os
 import sys
 import logging
@@ -17,6 +31,8 @@ debug = os.environ.get('SERVER_SOFTWARE', '').startswith('Dev')
 """
 
     ######################################## Webapp2 configuration. ########################################
+
+    Config settings for Webapp2, which AppTools uses for WSGI internals (http://webapp-improved.appspot.com).
 
 """
 
@@ -63,6 +79,8 @@ _config['webapp2_extras.jinja2'] = {
 
     ######################################## Core configuration. ########################################
 
+    Core system configuration, including settings for the WSGI app, config files, and installed Platforms.
+
 """
 
 ## System Config
@@ -95,6 +113,12 @@ _config['apptools.system.platform'] = {
     ]
 
 }
+
+
+
+"""
+###    === Don't modify below this line... ===
+"""
 
 
 def systemLog(message, _type='debug'):
@@ -142,4 +166,5 @@ def readConfig(config=_config):
 
         return config
 
+## Export compiled app config
 config = readConfig(_config)

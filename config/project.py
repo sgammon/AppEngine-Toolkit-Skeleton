@@ -4,6 +4,8 @@
 
     ######################################## AppTools Project configuration. ########################################
 
+    Main project configuration stuff, designed to be changed according to the app's desired environment and status.
+
 """
 
 config = {}
@@ -12,9 +14,9 @@ config = {}
 ## App settings
 config['apptools.project'] = {
 
-    'name': 'AppTools',
+    'name': 'AppTools',        # Change this to your app's name
 
-    'version': {
+    'version': {               # Change this according to your app's version
         'major': 1,
         'minor': 0,
         'micro': 0,
@@ -26,7 +28,7 @@ config['apptools.project'] = {
 
 ## Development/debug settings
 config['apptools.project.dev'] = {
-
+  # Not yet in use
 }
 
 ## Output layer settings

@@ -1,7 +1,7 @@
 ## AppTools Widget Core
 class CoreWidgetAPI extends CoreAPI
 
-    @name = 'widget'
+    @mount = 'widget'
     @events = []
 
     _init: (apptools) ->

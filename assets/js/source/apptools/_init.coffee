@@ -141,7 +141,7 @@ class AppTools
                     @sys.state.integrations.push name.toLowerCase()
 
                     ## Log + trigger event
-                    @dev.verbose('LibLoader', name + ' detected.', library)
+                    @dev.verbose('LibLoader', name + ' detected.')
                     @events.trigger('SYS_LIB_LOADED', name: name, library: library)
 
                     ## Trigger install callback
@@ -165,7 +165,7 @@ class AppTools
                 install: (name, adapter) =>
 
                     ## Log + trigger event
-                    @dev.verbose('InterfaceLoader', 'Installed "' + name + '" interface.', adapter)
+                    @dev.verbose('InterfaceLoader', 'Installed "' + name + '" interface.')
                     @events.trigger('SYS_INTERFACE_LOADED', name: name, adapter: adapter)
 
                     ## Install into state

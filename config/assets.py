@@ -3,6 +3,42 @@
 
     ###################################### Asset configuration. ######################################
 
+    ~~~  Description:  ~~~
+
+    In this config file, you can specify registered assets for use in the AppTools Assets API.
+    This all corresponds to the directory structure under app/assets. Place your static files in
+    app/assets/< js | style | ext >/static, and then register them in the proper section below.
+
+    If you register your scripts, stylesheets, and other stuff here, you can generate URLs to your
+    static content directly in the template, handler, service, model or pipeline!
+
+
+    ~~~ Generating Asset URLs ~~~
+
+    In a template:
+        {{ asset.script('jquery', 'core') }}   ## library first, package second (see below for definitions)
+
+    In a handler/pipeline/service/model:
+        self.get_script_url('jquery', 'core')  ## generated asset URLs honor output settings (e.g. CDN)
+
+
+    ~~~ Package Config Structure ~~~
+
+    '<type>': {
+
+        ('<package name>', '<type/subdirectory/path>'): {
+
+            'config': {
+                'min': True | False,                    # whether it's possible to serve a minified version of this asset (converts filename to <name>.min.<type>. turn on minified assets in output config to activate)
+                'version_mode': '<getvar | filename>',  # whether to add the package's version to the URL as a getvar or as part of the filename
+                'bundle': '<your.bundle.js>'            # a name for your bundle, so you can combine assets and serve the optimized version if you want
+            },
+
+            'assets': {
+                '<asset name>': {'min': True | False, 'version': '<version>'},  # override package `min` value, and specify the package version for cachebusting, when versioning is activated
+            }
+
+        }
 
 """
 config = {}
@@ -46,7 +82,8 @@ config['apptools.project.assets'] = {
             },
 
             'assets': {
-                'base': {'min': True, 'version': 0.9}  # RPC, events, dev, storage, user, etc (see $.apptools)
+                'base': {'min': True, 'version': 1.0},  # RPC, events, dev, storage, user, etc (see $.apptools)
+                'admin': {'min': True, 'version': 1.0}  # RPC, events, dev, storage, user, etc (see $.apptools)
             }
 
         },

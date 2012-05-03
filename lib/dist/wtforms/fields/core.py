@@ -9,9 +9,8 @@ from wtforms.validators import StopValidation
 
 __all__ = (
     'BooleanField', 'DecimalField', 'DateField', 'DateTimeField', 'FieldList',
-    'FileField', 'FloatField', 'FormField', 'HiddenField', 'IntegerField',
-    'PasswordField', 'RadioField', 'SelectField', 'SelectMultipleField',
-    'SubmitField', 'TextField', 'TextAreaField',
+    'FloatField', 'FormField', 'IntegerField', 'RadioField', 'SelectField',
+    'SelectMultipleField', 'StringField',
 )
 
 
@@ -33,9 +32,11 @@ class Field(object):
     """
     Field base class
     """
-    widget = None
     errors = tuple()
     process_errors = tuple()
+    raw_data = None
+    validators = tuple()
+    widget = None
     _formfield = True
     _translations = DummyTranslations()
 
@@ -81,26 +82,25 @@ class Field(object):
         returned instead. Call its :func:`bind` method with a form instance and
         a name to construct the field.
         """
-        self.short_name = _name
-        self.name = _prefix + _name
         if _translations is not None:
             self._translations = _translations
-        self.id = id or self.name
-        if label is None:
-            label = _name.replace('_', ' ').title()
-        self.label = Label(self.id, label)
-        if validators is None:
-            validators = []
-        self.validators = validators
-        self.filters = filters
-        self.description = description
-        self.type = type(self).__name__
+
         self.default = default
-        self.raw_data = None
-        if widget:
-            self.widget = widget
+        self.description = description
+        self.filters = filters
         self.flags = Flags()
-        for v in validators:
+        self.name = _prefix + _name
+        self.short_name = _name
+        self.type = type(self).__name__
+        self.validators = validators or list(self.validators)
+
+        self.id = id or self.name
+        self.label = Label(self.id, label if label is not None else self.gettext(_name.replace('_', ' ').title()))
+
+        if widget is not None:
+            self.widget = widget
+
+        for v in self.validators:
             flags = getattr(v, 'field_flags', ())
             for f in flags:
                 setattr(self.flags, f, True)
@@ -226,6 +226,9 @@ class Field(object):
                 data = self.default()
             except TypeError:
                 data = self.default
+
+        self.object_data = data
+
         try:
             self.process_data(data)
         except ValueError, e:
@@ -305,6 +308,8 @@ class Flags(object):
     Accessing a non-existing attribute returns False for its value.
     """
     def __getattr__(self, name):
+        if name.startswith('_'):
+            return super(Flags, self).__getattr__(name)
         return False
 
     def __contains__(self, name):
@@ -455,7 +460,7 @@ class RadioField(SelectField):
     option_widget = widgets.RadioInput()
 
 
-class TextField(Field):
+class StringField(Field):
     """
     This field is the base for most of the more complicated fields, and
     represents an ``<input type="text">``.
@@ -469,46 +474,16 @@ class TextField(Field):
             self.data = u''
 
     def _value(self):
-        return self.data is not None and unicode(self.data) or u''
+        return unicode(self.data) if self.data is not None else u''
 
 
-class HiddenField(TextField):
-    """
-    Represents an ``<input type="hidden">``.
-    """
-    widget = widgets.HiddenInput()
-
-
-class TextAreaField(TextField):
-    """
-    This field represents an HTML ``<textarea>`` and can be used to take
-    multi-line input.
-    """
-    widget = widgets.TextArea()
-
-
-class PasswordField(TextField):
-    """
-    Represents an ``<input type="password">``.
-    """
-    widget = widgets.PasswordInput()
-
-
-class FileField(TextField):
-    """
-    Can render a file-upload field.  Will take any passed filename value, if
-    any is sent by the browser in the post params.  This field will NOT
-    actually handle the file upload portion, as wtforms does not deal with
-    individual frameworks' file handling capabilities.
-    """
-    widget = widgets.FileInput()
-
-
-class IntegerField(TextField):
+class IntegerField(Field):
     """
     A text field, except all input is coerced to an integer.  Erroneous input
     is ignored and will not be accepted as a value.
     """
+    widget = widgets.TextInput()
+
     def __init__(self, label=None, validators=None, **kwargs):
         super(IntegerField, self).__init__(label, validators, **kwargs)
 
@@ -525,10 +500,11 @@ class IntegerField(TextField):
             try:
                 self.data = int(valuelist[0])
             except ValueError:
+                self.data = None
                 raise ValueError(self.gettext(u'Not a valid integer value'))
 
 
-class DecimalField(TextField):
+class DecimalField(Field):
     """
     A text field which displays and coerces data of the `decimal.Decimal` type.
 
@@ -540,6 +516,7 @@ class DecimalField(TextField):
         `decimal.ROUND_UP`. If unset, uses the rounding value from the
         current thread's context.
     """
+    widget = widgets.TextInput()
 
     def __init__(self, label=None, validators=None, places=2, rounding=None, **kwargs):
         super(DecimalField, self).__init__(label, validators, **kwargs)
@@ -570,14 +547,17 @@ class DecimalField(TextField):
             try:
                 self.data = decimal.Decimal(valuelist[0])
             except (decimal.InvalidOperation, ValueError):
+                self.data = None
                 raise ValueError(self.gettext(u'Not a valid decimal value'))
 
 
-class FloatField(TextField):
+class FloatField(Field):
     """
     A text field, except all input is coerced to an float.  Erroneous input
     is ignored and will not be accepted as a value.
     """
+    widget = widgets.TextInput()
+
     def __init__(self, label=None, validators=None, **kwargs):
         super(FloatField, self).__init__(label, validators, **kwargs)
 
@@ -594,6 +574,7 @@ class FloatField(TextField):
             try:
                 self.data = float(valuelist[0])
             except ValueError:
+                self.data = None
                 raise ValueError(self.gettext(u'Not a valid float value'))
 
 
@@ -610,6 +591,9 @@ class BooleanField(Field):
         self.data = bool(value)
 
     def process_formdata(self, valuelist):
+        # Checkboxes and submit buttons simply do not send a value when
+        # unchecked/not pressed. So the actual value="" doesn't matter for
+        # purpose of determining .data, only whether one exists or not.
         self.data = bool(valuelist)
 
     def _value(self):
@@ -639,8 +623,7 @@ class DateTimeField(Field):
         if valuelist:
             date_str = u' '.join(valuelist)
             try:
-                timetuple = time.strptime(date_str, self.format)
-                self.data = datetime.datetime(*timetuple[:6])
+                self.data = datetime.datetime.strptime(date_str, self.format)
             except ValueError:
                 self.data = None
                 raise
@@ -657,19 +640,10 @@ class DateField(DateTimeField):
         if valuelist:
             date_str = u' '.join(valuelist)
             try:
-                timetuple = time.strptime(date_str, self.format)
-                self.data = datetime.date(*timetuple[:3])
+                self.data = datetime.datetime.strptime(date_str, self.format).date()
             except ValueError:
                 self.data = None
                 raise
-
-
-class SubmitField(BooleanField):
-    """
-    Represents an ``<input type="submit">``.  This allows checking if a given
-    submit button has been pressed.
-    """
-    widget = widgets.SubmitInput()
 
 
 class FormField(Field):
@@ -701,6 +675,8 @@ class FormField(Field):
             except TypeError:
                 data = self.default
             self._obj = data
+
+        self.object_data = data
 
         prefix = self.name + self.separator
         if isinstance(data, dict):
@@ -759,7 +735,7 @@ class FieldList(Field):
         accept no more than this many entries as input, even if more exist in
         formdata.
     """
-    widget = widgets.ListWidget()
+    widget=widgets.ListWidget()
 
     def __init__(self, unbound_field, label=None, validators=None, min_entries=0,
                  max_entries=None, default=tuple(), **kwargs):
@@ -782,6 +758,8 @@ class FieldList(Field):
                 data = self.default()
             except TypeError:
                 data = self.default
+
+        self.object_data = data
 
         if formdata:
             indices = sorted(set(self._extract_indices(self.name, formdata)))
@@ -849,7 +827,7 @@ class FieldList(Field):
             'You cannot have more than max_entries entries in this FieldList'
         new_index = self.last_index = index or (self.last_index + 1)
         name = '%s-%d' % (self.short_name, new_index)
-        id = '%s-%d' % (self.id, new_index)
+        id   = '%s-%d' % (self.id, new_index)
         field = self.unbound_field.bind(form=None, name=name, prefix=self._prefix, id=id)
         field.process(formdata, data)
         self.entries.append(field)
