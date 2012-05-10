@@ -1,0 +1,32 @@
+{
+  "name": "APP_STYLES",
+  "version": "0.0.1",
+  "author": "",
+  "contributors": [
+    {
+      "name": "",
+      "email": ""
+    }
+  ],
+  "devDependencies" : {
+    "sass": ">=0.5.0"
+  },
+  "toolkit": {
+    "build": [
+      {
+          "name": "App Styles",
+          "compile": "*.sass",
+          "join": false,
+          "uglify": true,
+          "targets": {
+              "min": "app/*.min.css",
+              "dev": "app/*.css"
+          }
+      }
+    ]
+  },
+  "engine": {
+    "sass": ">=0.5.0",
+    "apptools": "0.1"
+  }
+}

@@ -1,16 +1,112 @@
 <!doctype html>
-<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en"> <![endif]-->
-<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en"> <![endif]-->
-<!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+{%- block _tpl_root -%}
+{% if not page.manifest %}
+<!--[if IEMobile 7]><html class="no-js iem7" lang="en" prefix="og: http://ogp.me/ns#"><![endif]-->
+<!--[if (gt IEMobile 7)|!(IEMobile)]><!--><html class="no-js" lang="en" prefix="og: http://ogp.me/ns#"><!--<![endif]-->
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en" prefix="og: http://ogp.me/ns#"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en" prefix="og: http://ogp.me/ns#"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en" prefix="og: http://ogp.me/ns#"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" prefix="og: http://ogp.me/ns#"> <!--<![endif]-->
+{% else %}
+<!--[if IEMobile 7]><html class="no-js iem7" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"><![endif]-->
+<!--[if (gt IEMobile 7)|!(IEMobile)]><!--><html class="no-js" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"><!--<![endif]-->
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <![endif]-->
+<!--[if (IE 7)&!(IEMobile)]>    <html class="no-js ie7 oldie" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <![endif]-->
+<!--[if (IE 8)&!(IEMobile)]>    <html class="no-js ie8 oldie" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" prefix="og: http://ogp.me/ns#" manifest="{{ page.manifest.location }}"> <!--<![endif]-->
+{% endif %}
+
 <head>
-	{% include "core/__north.html" %}
+	{% block head %}
+		{% block meta %}
+		<!-- Meta -->
+		<meta charset="utf-8">
+		<meta http-equiv="Vary" content="encoding">
+		<meta http-equiv="Content-Language" content="en">
+		<meta http-equiv="Cache-Control" content="private">
+		<meta http-equiv="Content-Type" content="text/html">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		{% if page.cookies %}
+		<meta http-equiv="Set-Cookie" content="{{ page.cookies }}">
+		{% endif %}
+
+		<!-- Info -->
+		<meta name="author" content="">
+		<meta name="publisher" content="">
+		<meta name="keywords" content="">
+		<meta name="copyright" content="">
+		<meta name="description" content="">
+		<meta name="application-name" content="AppTools">
+		<meta name="google-site-verification" content="" />
+		<meta name="robots" content="index, follow">
+		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes,height=device-height">
+		<meta name="revisit-after" content="7 days">
+		<!-- keyword,keyword,keyword -->
+
+		{% block opengraph %}
+		<!-- OpenGraph -->
+		<meta property="og:title" content="" />
+		<meta property="og:type" content="website" />
+		<meta property="og:determiner" content="" />
+		<meta property="og:locale" content="en_US" />
+		<meta property="og:url" content="{{ page.url }}" />
+		<meta property="og:description" content="" />
+		<meta property="og:image" content="" />
+		<meta property="og:image:width" content="298" />
+		<meta property="og:image:height" content="298" />
+		<meta property="og:site_name" content="" />
+		<meta property="fb:app_id" content="" />
+
+		<!-- Location/Geo -->
+		<meta property="og:latitude" content="">
+		<meta property="og:longitude" content="">
+		<meta property="og:street-address" content="">
+		<meta property="og:locality" content="">
+		<meta property="og:region" content="">
+		<meta property="og:postal-code" content="">
+		<meta property="og:country-name" content="">
+		<meta property="og:email" content="">
+		<meta property="og:phone_number" content="">
+		{% endblock %}
+
+		{%- block mobile -%}
+		{% if page.ios or util.config.debug %}
+		<!-- Mobile/Extras -->
+		<meta name="MobileOptimized" content="320">
+		<meta name="HandheldFriendly" content="True">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<link rel="apple-touch-icon" href="{{ asset.image('mobile/ios', 'touch-icon.png') }}" />
+		<link rel="apple-touch-startup-image" href="{{ asset.image('mobile/ios', 'iphone-splash.png') }}" />
+		<link rel="apple-touch-icon-precomposed" href="{{ asset.image('mobile/ios', 'touch-icon-precomposed.png') }}">
+		<link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{ asset.image('mobile/ios', 'apple-touch-icon.png') }}">
+		{% endif %}
+		{%- endblock -%}
+
+		<link rel="icon" href="//{{ util.request.headers.get('host') }}/favicon.ico" type="image/x-icon">
+		<link rel="logo" href="{{ asset.image('branding', 'logo.svg') }}">
+		<link rel="shortcut icon" href="//{{ util.request.headers.get('host') }}/favicon.ico" type="image/x-icon">
+
+		{% endblock meta %}
+
+		{%- block prenorth -%}{%- endblock -%}
+		{%- block north -%}
+			{% include "core/__north.html" %}
+		{%- endblock -%}
+		{% block postnorth %}{% endblock %}
+
+		<title>{% block title %}Welcome to AppTools!{% endblock title %}</title>
+	{% endblock %}
 </head>
 
-<body>
+<body role="application" lang="en" translate="yes" dir="ltr">
+
 {% block body %}
 {% endblock body %}
 
 {% include "core/__south.html" %}
+
 </body>
 </html>
+{%- endblock _tpl_root -%}

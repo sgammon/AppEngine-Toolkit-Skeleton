@@ -1,4 +1,7 @@
 @import "compass/utilities/sprites/sprite-img"
+@import _core/config
+@import _core/h5bp
+@import _core/initializr
 
 body
 	font: 80% Verdana, sans-serif
@@ -20,50 +23,6 @@ p
 	bottom: 0
 	right: 0
 
-#welcome
-	background: white
-	width: 32em
-	margin: 5em auto
-	padding: 0 0 .5em 1em
-	border-radius: 15px
-	
-#debugtools
-	
-	ul
-	
-		&.collapsed
-			display: none
-						
-		&.expanded
-			display: visible
-			background: #DDD
-			
-			li
-				list-style: none
-			
-		li.section
-		
-			padding-top: 3px
-			padding-bottom: 3px
-			margin-top: 3px
-			margin-right: 3em			
-			margin-bottom: 3px
-			list-style: none
-			background: #DDD
-			
-			&.closed
-				background: #BBB
-			
-			a
-				
-				font-size: 90%
-			
-				&.openclose
-					padding-left: 20px
-					
-					&.opened
-						background: #DDD url('/assets/img/static/icons/toggle-minus.png') no-repeat left bottom
-					
-					&.closed
-						background: #BBB url('/assets/img/static/icons/toggle-plus.png') no-repeat left bottom
-	
+@import _core/helpers
+@import _core/mediaqueries
+@import _core/print

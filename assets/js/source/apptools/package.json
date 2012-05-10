@@ -1,0 +1,96 @@
+{
+  "name": "apptools-js",
+  "preferGlobal": "false",
+  "version": "0.4.1",
+  "author": "momentum labs <x+code@momentum.io>",
+  "description": "Companion JavaScript library to AppTools for Google App Engine.",
+  "contributors": [
+    {
+      "name": "Sam Gammon",
+      "email": "sam@momentum.io"
+    },
+    {
+      "name": "David Rekow",
+      "email": "david@momentum.io"
+    }
+  ],
+  "scripts": {
+  },
+  "main": "./_init.coffee",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/momentum/AppToolsJS"
+  },
+  "keywords": [
+    "rpc",
+    "integration",
+    "platform",
+    "framework"
+  ],
+  "dependencies" : {
+    "underscore": ">=1.3.1",
+    "backbone" : ">=0.9.1"
+  },
+  "noAnalyze": false,
+  "devDependencies": {
+    "coffee-script": ">=1.2.0",
+    "wrench-js":  ">=1.3.5",
+    "uglify-js": ">=1.2.5",
+  },
+  "license": "MIT",
+  "toolkit": {
+    "build": [
+      {
+          "name": "AppToolsJS Core",
+          "compile": true,
+          "join": true,
+          "uglify": true,
+          "order": [
+              "_milk.coffee",
+              "_core.coffee",
+              "dev.coffee",
+              "events.coffee",
+              "agent.coffee",
+              "dispatch.coffee",
+              "storage.coffee",
+              "rpc.coffee",
+              "user.coffee",
+              "push.coffee",
+              "_init.coffee"
+          ],
+          "targets": {
+              "min": "apptools/base.min.js",
+              "dev": "apptools/base.js"
+          }
+      },
+      {
+          "name": "AppToolsJS Admin",
+          "compile": true,
+          "join": true,
+          "uglify": true,
+          "order": [
+              "_milk.coffee",
+              "_core.coffee",
+              "dev.coffee",
+              "events.coffee",
+              "agent.coffee",
+              "dispatch.coffee",
+              "storage.coffee",
+              "rpc.coffee",
+              "user.coffee",
+              "push.coffee",
+              ["admin", "_core.coffee"],
+              ["admin", "blog.coffee"],
+              ["admin", "page.coffee"],
+              ["admin", "site.coffee"],
+              ["admin", "content.coffee"],
+              "_init.coffee"
+          ]
+      }
+    ]
+  },
+  "engine": {
+    "node": ">=0.4",
+    "apptools": "0.1"
+  }
+}
