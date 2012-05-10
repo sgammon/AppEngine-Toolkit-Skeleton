@@ -1,0 +1,34 @@
+{
+  "name": "APP_TEMPLATES",
+  "version": "0.0.1",
+  "author": "",
+  "contributors": [
+    {
+      "name": "",
+      "email": ""
+    }
+  ],
+  "devDependencies": {
+    "milk": ">=1.2.0"
+  },
+  "toolkit": {
+    "build": [
+      {
+          "name": "App Templates",
+          "compile": true,
+          "join": true,
+          "uglify": true,
+          "order": [
+          ],
+          "targets": {
+              "min": "templates/*.min.js",
+              "dev": "templates/*.js"
+          }
+      }
+    ]
+  },
+  "engine": {
+    "node": ">=0.4",
+    "apptools": "0.1"
+  }
+}

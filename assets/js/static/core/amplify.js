@@ -6,6 +6,7 @@ var slice = [].slice,
 var amplify = global.amplify = {
 	publish: function( topic ) {
 		var args = slice.call( arguments, 1 ),
+			topicSubscriptions,
 			subscription,
 			length,
 			i = 0,
@@ -15,8 +16,9 @@ var amplify = global.amplify = {
 			return true;
 		}
 
-		for ( length = subscriptions[ topic ].length; i < length; i++ ) {
-			subscription = subscriptions[ topic ][ i ];
+		topicSubscriptions = subscriptions[ topic ].slice();
+		for ( length = topicSubscriptions.length; i < length; i++ ) {
+			subscription = topicSubscriptions[ i ];
 			ret = subscription.callback.apply( subscription.context, args );
 			if ( ret === false ) {
 				break;
@@ -39,28 +41,33 @@ var amplify = global.amplify = {
 
 		var topicIndex = 0,
 			topics = topic.split( /\s/ ),
-			topicLength = topics.length;
+			topicLength = topics.length,
+			added;
 		for ( ; topicIndex < topicLength; topicIndex++ ) {
 			topic = topics[ topicIndex ];
+			added = false;
 			if ( !subscriptions[ topic ] ) {
 				subscriptions[ topic ] = [];
 			}
-	
+
 			var i = subscriptions[ topic ].length - 1,
 				subscriptionInfo = {
 					callback: callback,
 					context: context,
 					priority: priority
 				};
-	
+
 			for ( ; i >= 0; i-- ) {
 				if ( subscriptions[ topic ][ i ].priority <= priority ) {
 					subscriptions[ topic ].splice( i + 1, 0, subscriptionInfo );
-					return callback;
+					added = true;
+					break;
 				}
 			}
-	
-			subscriptions[ topic ].unshift( subscriptionInfo );
+
+			if ( !added ) {
+				subscriptions[ topic ].unshift( subscriptionInfo );
+			}
 		}
 
 		return callback;
@@ -84,15 +91,6 @@ var amplify = global.amplify = {
 };
 
 }( this ) );
-/*!
- * Amplify Store - Persistent Client-Side Storage 1.0.0
- * 
- * Copyright 2011 appendTo LLC. (http://appendto.com/team)
- * Dual licensed under the MIT or GPL licenses.
- * http://appendto.com/open-source-licenses
- * 
- * http://amplifyjs.com
- */
 (function( amplify, undefined ) {
 
 var store = amplify.store = function( key, value, options, type ) {
@@ -116,9 +114,9 @@ store.addType = function( type, storage ) {
 		options.type = type;
 		return store( key, value, options );
 	};
-}
+};
 store.error = function() {
-	return "amplify.store quota exceeded"; 
+	return "amplify.store quota exceeded";
 };
 
 var rprefix = /^__amplify__/;
@@ -239,65 +237,88 @@ if ( window.globalStorage ) {
 		attrKey = "amplify";
 	div.style.display = "none";
 	document.getElementsByTagName( "head" )[ 0 ].appendChild( div );
-	if ( div.addBehavior ) {
+
+	// we can't feature detect userData support
+	// so just try and see if it fails
+	// surprisingly, even just adding the behavior isn't enough for a failure
+	// so we need to load the data as well
+	try {
 		div.addBehavior( "#default#userdata" );
+		div.load( attrKey );
+	} catch( e ) {
+		div.parentNode.removeChild( div );
+		return;
+	}
 
-		store.addType( "userData", function( key, value, options ) {
-			div.load( attrKey );
-			var attr, parsed, prevValue, i, remove,
-				ret = value,
-				now = (new Date()).getTime();
+	store.addType( "userData", function( key, value, options ) {
+		div.load( attrKey );
+		var attr, parsed, prevValue, i, remove,
+			ret = value,
+			now = (new Date()).getTime();
 
-			if ( !key ) {
-				ret = {};
-				remove = [];
-				i = 0;
-				while ( attr = div.XMLDocument.documentElement.attributes[ i++ ] ) {
-					parsed = JSON.parse( attr.value );
-					if ( parsed.expires && parsed.expires <= now ) {
-						remove.push( attr.name );
-					} else {
-						ret[ attr.name ] = parsed.data;
-					}
-				}
-				while ( key = remove.pop() ) {
-					div.removeAttribute( key );
-				}
-				div.save( attrKey );
-				return ret;
-			}
-
-			// convert invalid characters to dashes
-			// http://www.w3.org/TR/REC-xml/#NT-Name
-			// simplified to assume the starting character is valid
-			// also removed colon as it is invalid in HTML attribute names
-			key = key.replace( /[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u37f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-" );
-
-			if ( value === undefined ) {
-				attr = div.getAttribute( key );
-				parsed = attr ? JSON.parse( attr ) : { expires: -1 };
+		if ( !key ) {
+			ret = {};
+			remove = [];
+			i = 0;
+			while ( attr = div.XMLDocument.documentElement.attributes[ i++ ] ) {
+				parsed = JSON.parse( attr.value );
 				if ( parsed.expires && parsed.expires <= now ) {
-					div.removeAttribute( key );
+					remove.push( attr.name );
 				} else {
-					return parsed.data;
-				}
-			} else {
-				if ( value === null ) {
-					div.removeAttribute( key );
-				} else {
-					// we need to get the previous value in case we need to rollback
-					prevValue = div.getAttribute( key );
-					parsed = JSON.stringify({
-						data: value,
-						expires: (options.expires ? (now + options.expires) : null)
-					});
-					div.setAttribute( key, parsed );
+					ret[ attr.name ] = parsed.data;
 				}
 			}
+			while ( key = remove.pop() ) {
+				div.removeAttribute( key );
+			}
+			div.save( attrKey );
+			return ret;
+		}
 
+		// convert invalid characters to dashes
+		// http://www.w3.org/TR/REC-xml/#NT-Name
+		// simplified to assume the starting character is valid
+		// also removed colon as it is invalid in HTML attribute names
+		key = key.replace( /[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u37f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-" );
+
+		if ( value === undefined ) {
+			attr = div.getAttribute( key );
+			parsed = attr ? JSON.parse( attr ) : { expires: -1 };
+			if ( parsed.expires && parsed.expires <= now ) {
+				div.removeAttribute( key );
+			} else {
+				return parsed.data;
+			}
+		} else {
+			if ( value === null ) {
+				div.removeAttribute( key );
+			} else {
+				// we need to get the previous value in case we need to rollback
+				prevValue = div.getAttribute( key );
+				parsed = JSON.stringify({
+					data: value,
+					expires: (options.expires ? (now + options.expires) : null)
+				});
+				div.setAttribute( key, parsed );
+			}
+		}
+
+		try {
+			div.save( attrKey );
+		// quota exceeded
+		} catch ( error ) {
+			// roll the value back to the previous value
+			if ( prevValue === null ) {
+				div.removeAttribute( key );
+			} else {
+				div.setAttribute( key, prevValue );
+			}
+
+			// expire old data and try again
+			store.userData();
 			try {
+				div.setAttribute( key, parsed );
 				div.save( attrKey );
-			// quota exceeded
 			} catch ( error ) {
 				// roll the value back to the previous value
 				if ( prevValue === null ) {
@@ -305,31 +326,18 @@ if ( window.globalStorage ) {
 				} else {
 					div.setAttribute( key, prevValue );
 				}
-
-				// expire old data and try again
-				store.userData();
-				try {
-					div.setAttribute( key, parsed );
-					div.save( attrKey );
-				} catch ( error ) {
-					// roll the value back to the previous value
-					if ( prevValue === null ) {
-						div.removeAttribute( key );
-					} else {
-						div.setAttribute( key, prevValue );
-					}
-					throw store.error();
-				}
+				throw store.error();
 			}
-			return ret;
-		});
-	}
+		}
+		return ret;
+	});
 }() );
 
 // in-memory storage
 // fallback for all browsers to enable the API even if we can't persist data
 (function() {
-	var memory = {};
+	var memory = {},
+		timeout = {};
 
 	function copy( obj ) {
 		return obj === undefined ? undefined : JSON.parse( JSON.stringify( obj ) );
@@ -344,6 +352,11 @@ if ( window.globalStorage ) {
 			return copy( memory[ key ] );
 		}
 
+		if ( timeout[ key ] ) {
+			clearTimeout( timeout[ key ] );
+			delete timeout[ key ];
+		}
+
 		if ( value === null ) {
 			delete memory[ key ];
 			return null;
@@ -351,8 +364,9 @@ if ( window.globalStorage ) {
 
 		memory[ key ] = value;
 		if ( options.expires ) {
-			setTimeout(function() {
+			timeout[ key ] = setTimeout(function() {
 				delete memory[ key ];
+				delete timeout[ key ];
 			}, options.expires );
 		}
 
@@ -361,20 +375,29 @@ if ( window.globalStorage ) {
 }() );
 
 }( this.amplify = this.amplify || {} ) );
-/*!
- * Amplify Request 1.0.0
- * 
- * Copyright 2011 appendTo LLC. (http://appendto.com/team)
- * Dual licensed under the MIT or GPL licenses.
- * http://appendto.com/open-source-licenses
- * 
- * http://amplifyjs.com
- */
 (function( amplify, undefined ) {
 
 function noop() {}
 function isFunction( obj ) {
 	return ({}).toString.call( obj ) === "[object Function]";
+}
+
+function async( fn ) {
+	var isAsync = false;
+	setTimeout(function() {
+		isAsync = true;
+	}, 1 );
+	return function() {
+		var that = this,
+			args = arguments;
+		if ( isAsync ) {
+			fn.apply( that, args );
+		} else {
+			setTimeout(function() {
+				fn.apply( that, args );
+			}, 1 );
+		}
+	};
 }
 
 amplify.request = function( resourceId, data, callback ) {
@@ -398,18 +421,18 @@ amplify.request = function( resourceId, data, callback ) {
 		resource = amplify.request.resources[ settings.resourceId ],
 		success = settings.success || noop,
 		error = settings.error || noop;
-	settings.success = function( data, status ) {
+	settings.success = async( function( data, status ) {
 		status = status || "success";
 		amplify.publish( "request.success", settings, data, status );
 		amplify.publish( "request.complete", settings, data, status );
 		success( data, status );
-	};
-	settings.error = function( data, status ) {
+	});
+	settings.error = async( function( data, status ) {
 		status = status || "error";
 		amplify.publish( "request.error", settings, data, status );
 		amplify.publish( "request.complete", settings, data, status );
 		error( data, status );
-	};
+	});
 
 	if ( !resource ) {
 		if ( !settings.resourceId ) {
@@ -463,10 +486,8 @@ amplify.request.types.ajax = function( defnSettings ) {
 	return function( settings, request ) {
 		var xhr,
 			url = defnSettings.url,
-			data = settings.data,
 			abort = request.abort,
-			ajaxSettings = {},
-			mappedKeys = [],
+			ajaxSettings = $.extend( true, {}, defnSettings, { data: settings.data } ),
 			aborted = false,
 			ampXHR = {
 				readyState: 0,
@@ -498,27 +519,10 @@ amplify.request.types.ajax = function( defnSettings ) {
 				}
 			};
 
-		if ( typeof data !== "string" ) {
-			data = $.extend( true, {}, defnSettings.data, data );
-			
-			url = url.replace( rurlData, function ( m, key ) {
-				if ( key in data ) {
-				    mappedKeys.push( key );
-				    return data[ key ];
-				}
-			});
-			
-			// We delete the keys later so duplicates are still replaced
-			$.each( mappedKeys, function ( i, key ) {
-				delete data[ key ];
-			});
-		}
+		amplify.publish( "request.ajax.preprocess",
+			defnSettings, settings, ajaxSettings, ampXHR );
 
-		$.extend( ajaxSettings, defnSettings, {
-			url: url,
-			type: defnSettings.type,
-			data: data,
-			dataType: defnSettings.dataType,
+		$.extend( ajaxSettings, {
 			success: function( data, status ) {
 				handleResponse( data, status );
 			},
@@ -571,6 +575,56 @@ amplify.request.types.ajax = function( defnSettings ) {
 		};
 	};
 };
+
+
+
+amplify.subscribe( "request.ajax.preprocess", function( defnSettings, settings, ajaxSettings ) {
+	var mappedKeys = [],
+		data = ajaxSettings.data;
+
+	if ( typeof data === "string" ) {
+		return;
+	}
+
+	data = $.extend( true, {}, defnSettings.data, data );
+
+	ajaxSettings.url = ajaxSettings.url.replace( rurlData, function ( m, key ) {
+		if ( key in data ) {
+		    mappedKeys.push( key );
+		    return data[ key ];
+		}
+	});
+
+	// We delete the keys later so duplicates are still replaced
+	$.each( mappedKeys, function ( i, key ) {
+		delete data[ key ];
+	});
+
+	ajaxSettings.data = data;
+});
+
+
+
+amplify.subscribe( "request.ajax.preprocess", function( defnSettings, settings, ajaxSettings ) {
+	var data = ajaxSettings.data,
+		dataMap = defnSettings.dataMap;
+
+	if ( !dataMap || typeof data === "string" ) {
+		return;
+	}
+
+	if ( $.isFunction( dataMap ) ) {
+		ajaxSettings.data = dataMap( data );
+	} else {
+		$.each( defnSettings.dataMap, function( orig, replace ) {
+			if ( orig in data ) {
+				data[ replace ] = data[ orig ];
+				delete data[ orig ];
+			}
+		});
+		ajaxSettings.data = data;
+	}
+});
 
 
 
@@ -633,7 +687,7 @@ if ( amplify.store ) {
 				return false;
 			}
 			var success = ampXHR.success;
-			ampXHR.success = function( data ) {	
+			ampXHR.success = function( data ) {
 				amplify.store[ type ]( cacheKey, data, { expires: resource.cache.expires } );
 				success.apply( this, arguments );
 			};
